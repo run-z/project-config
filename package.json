@@ -1,0 +1,68 @@
+{
+  "name": "@run-z/project-config",
+  "version": "0.1.0",
+  "description": "Project configuration helper for @surol's projects",
+  "homepage": "https://github.com/run-z/project-config",
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com:run-z/project-config.git"
+  },
+  "license": "MIT",
+  "author": "Ruslan Lopatin <ruslan.lopatin@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/run-z/project-config/issues"
+  },
+  "type": "module",
+  "main": "./dist/project-config.cjs",
+  "module": "./dist/project-config.js",
+  "types": "./dist/project-config.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/project-config.d.ts",
+      "import": "./dist/project-config.js",
+      "require": "./dist/project-config.cjs"
+    },
+    "./rollup": {
+      "types": "./dist/project-config.rollup.d.ts",
+      "import": "./dist/project-config.rollup.js",
+      "require": "./dist/project-config.rollup.cjs"
+    }
+  },
+  "peerDependencies": {
+    "eslint": "^8.18.0",
+    "prettier": "^2.7.1",
+    "rollup": "^2.75.7",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "@run-z/eslint-config": "^3.1.1",
+    "@run-z/prettier-config": "^2.0.0",
+    "rollup-plugin-flat-dts": "^1.6.1",
+    "rollup-plugin-sourcemaps": "^0.6.3",
+    "rollup-plugin-typescript2": "^0.32.1",
+    "run-z": "=1.10.0-bootstrap",
+    "typedoc": "^0.22.17"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.41",
+    "eslint": "^8.18.0",
+    "gh-pages": "^4.0.0",
+    "prettier": "^2.7.1",
+    "rollup": "^2.75.7",
+    "shx": "^0.3.4",
+    "tslib": "^2.4.0",
+    "typescript": "^4.7.4"
+  },
+  "scripts": {
+    "all": "run-z build,lint",
+    "bootstrap": "rollup -c",
+    "build": "run-z +z bootstrap",
+    "ci:all": "run-z all",
+    "clean": "run-z +z --then shx rm -rf dist target",
+    "doc": "run-z +z --then typedoc",
+    "doc:publish": "run-z doc --then gh-pages --dist target/typedoc --dotfiles",
+    "format": "run-z +z --then prettier --write \"**/*.{json,md}\"",
+    "lint": "run-z +z --then eslint .",
+    "z": "run-z +cmd:rollup,+cmd:typedoc,+cmd:eslint"
+  }
+}
