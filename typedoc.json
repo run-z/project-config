@@ -1,5 +1,6 @@
 {
   "entryPoints": ["src/mod.ts", "src/rollup/mod.ts"],
+  "excludePrivate": true,
   "name": "Project Configuration Helper",
   "out": "./target/typedoc",
   "tsconfig": "tsconfig.json"
