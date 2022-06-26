@@ -1,8 +1,8 @@
 import path from 'node:path';
 import process from 'node:process';
 import { PackageJson } from './package/package-json.js';
-import { ProjectSources, ProjectSourcesInit } from './project-sources.js';
-import { ProjectTargets, ProjectTargetsInit } from './project-targets.js';
+import { ProjectEntry } from './project-entry.js';
+import { ProjectExport } from './project-export.js';
 
 /**
  * Project configuration.
@@ -10,9 +10,12 @@ import { ProjectTargets, ProjectTargetsInit } from './project-targets.js';
 export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
 
   readonly #rootDir: string;
-  readonly #sources: ProjectSources;
-  readonly #targets: ProjectTargets;
+  readonly #sourceDir: string;
+  readonly #distDir: string;
+  readonly #buildDir: string;
   #packageJson?: PackageJson;
+  #exports?: Promise<ReadonlyMap<string, ProjectExport>>;
+  #mainEntry?: Promise<ProjectEntry>;
 
   /**
    * Constructs project configuration.
@@ -21,11 +24,17 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
    */
   constructor(init: ProjectInit = {}) {
 
-    const { rootDir = process.cwd(), sources, targets } = init;
+    const {
+      rootDir = process.cwd(),
+      sourceDir = 'src',
+      distDir = 'dist',
+      buildDir = 'target',
+    } = init;
 
     this.#rootDir = path.resolve(rootDir);
-    this.#sources = new ProjectSources(this, sources);
-    this.#targets = new ProjectTargets(this, targets);
+    this.#sourceDir = path.resolve(this.#rootDir, sourceDir);
+    this.#distDir = path.resolve(this.#rootDir, distDir);
+    this.#buildDir = path.resolve(this.#rootDir, buildDir);
   }
 
   /**
@@ -41,16 +50,81 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
     return this.#rootDir;
   }
 
-  get sources(): ProjectSources {
-    return this.#sources;
+  get sourceDir(): string {
+    return this.#sourceDir;
   }
 
-  get targets(): ProjectTargets {
-    return this.#targets;
+  get buildDir(): string {
+    return this.#buildDir;
   }
 
+  get distDir(): string {
+    return this.#distDir;
+  }
+
+  /**
+   * `package.json` contents.
+   */
   get packageJson(): PackageJson {
     return this.#packageJson ||= new PackageJson(this);
+  }
+
+  /**
+   * Promise resolved to the main entry of the project.
+   */
+  get mainEntry(): Promise<ProjectEntry> {
+    if (!this.#mainEntry) {
+      this.#mainEntry = this.#findMainEntry();
+    }
+
+    return this.#mainEntry;
+  }
+
+  async #findMainEntry(): Promise<ProjectEntry> {
+
+    const entries = await this.entries;
+
+    for (const entry of entries.values()) {
+      if (entry.isMain) {
+        return entry;
+      }
+    }
+
+    throw new ReferenceError('No main entry');
+  }
+
+  /**
+   * Promise resolved to project entries map with their {@link ProjectEntry.name names} as keys.
+   */
+  get entries(): Promise<ReadonlyMap<string, ProjectEntry>> {
+    return this.exports;
+  }
+
+  /**
+   * Promise resolved to project exports map with their {@link ProjectEntry.name names} as keys.
+   */
+  get exports(): Promise<ReadonlyMap<string, ProjectExport>> {
+    if (!this.#exports) {
+      this.#exports = this.#loadExports();
+    }
+
+    return this.#exports;
+  }
+
+  async #loadExports(): Promise<ReadonlyMap<string, ProjectExport>> {
+
+    const entries = await Promise.all(
+        [...this.packageJson.entryPoints.values()].map(
+            async entryPoint => {
+
+              const entry = await ProjectExport.create({ project: this, entryPoint });
+
+              return entry ? [entry.name, entry] as const : undefined;
+            },
+        ),
+    );
+
+    return new Map(entries.filter(entry => !!entry) as (readonly [string, ProjectExport])[]);
   }
 
 }
@@ -68,13 +142,24 @@ export interface ProjectInit {
   readonly rootDir?: string | undefined;
 
   /**
-   * Source files configuration.
+   * Root source files directory relative to {@link rootDir project root}.
+   *
+   * Defaults to `src`.
    */
-  readonly sources?: ProjectSourcesInit | undefined;
+  readonly sourceDir?: string | undefined;
 
   /**
-   * Target files configuration.
+   * Distributable files` directory relative to {@link rootDir project root}.
+   *
+   * Defaults to `dist`
    */
-  readonly targets?: ProjectTargetsInit | undefined;
+  readonly distDir?: string | undefined;
+
+  /**
+   * Temporal build directory relative to {@link rootDir project root}.
+   *
+   * Defaults to `target`.
+   */
+  readonly buildDir?: string | undefined;
 
 }

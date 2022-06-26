@@ -6,6 +6,7 @@ import sourcemaps from 'rollup-plugin-sourcemaps';
 import ts from 'rollup-plugin-typescript2';
 import typescript from 'typescript';
 import { ProjectConfig } from '../project-config.js';
+import { ProjectEntry } from '../project-entry.js';
 
 /**
  * Rollup configuration.
@@ -44,15 +45,21 @@ export class ProjectRollup {
    */
   async build(): Promise<RollupOptions> {
 
-    const { entryFile } = this.#project.sources;
-    const { distDir, buildDir, mainFile } = this.#project.targets;
-    const mainEntry = this.#entryName(mainFile);
-    const tsconfig = await this.#project.sources.tsconfig;
+    const { sourceDir, distDir, buildDir } = this.#project;
+    const entries = await this.#project.entries;
+    const mainEntry = await this.#project.mainEntry;
+    const tsconfig = 'tsconfig.json';
+    const chunksByDir: [string, string][] = ([...entries].map(([name, entry]) => {
+
+      const entryDir = path.dirname(path.resolve(sourceDir, entry.sourceFile));
+
+      return [`${entryDir}/${path.sep}`, `_${name}.js`];
+    }));
 
     return {
-      input: {
-        [mainEntry]: entryFile,
-      },
+      input: Object.fromEntries(
+          [...entries].map(([name, entry]) => [name, path.resolve(sourceDir, entry.sourceFile)]),
+      ),
       plugins: [
         ts({
           typescript,
@@ -66,27 +73,57 @@ export class ProjectRollup {
         dir: distDir,
         format: 'esm',
         sourcemap: true,
-        entryFileNames: '[name].js',
+        entryFileNames: chunk => entries.get(chunk.name)?.distFile || '',
+        manualChunks: (moduleId, moduleApi) => {
+
+          const moduleInfo = moduleApi.getModuleInfo(moduleId);
+
+          if (!moduleInfo || moduleInfo.isExternal) {
+            return null;
+          }
+
+          for (const [dir, chunk] of chunksByDir) {
+            if (moduleId.startsWith(dir)) {
+              return chunk;
+            }
+          }
+
+          return null;
+        },
         plugins: [
           flatDts({
             tsconfig,
             lib: true,
-            file: `${mainEntry}.d.ts`,
+            file: this.#dtsName(mainEntry),
             compilerOptions: {
               declarationMap: true,
             },
+            entries: Object.fromEntries(
+                ([...entries]
+                    .filter(item => item[1] !== mainEntry)
+                    .map(([name, entry]) => [name, { file: this.#dtsName(entry) }])),
+            ),
           }),
         ],
       },
     };
   }
 
-  #entryName(filePath: string): string {
+  #dtsName(entry: ProjectEntry): string {
 
-    const fileName = path.relative(this.#project.targets.distDir, filePath);
-    const fileExt = path.extname(fileName);
+    const projectExport = entry.toExport();
 
-    return fileExt ? fileName.slice(0, -fileExt.length) : fileExt;
+    if (projectExport) {
+      // Try to extract `.d.ts` file name from corresponding export condition.
+      const types = projectExport.withConditions('types');
+
+      if (types) {
+        return path.relative(this.#project.distDir, types);
+      }
+    }
+
+    // Fall back to entry name with `.d.ts` extension.
+    return `${entry.name}.d.ts`;
   }
 
   #externalModules(): (this: void, id: string) => boolean {

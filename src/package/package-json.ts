@@ -3,7 +3,7 @@ import path from 'node:path';
 import { ProjectConfig } from '../project-config.js';
 
 /**
- * Loads {@link PackageJson package.json} file.
+ * `package.json` contents representation.
  *
  * @param packageJson - Path to `package.json` file to load. By default, loads the one from working directory.
  *
@@ -12,20 +12,26 @@ import { ProjectConfig } from '../project-config.js';
 export class PackageJson {
 
   readonly #raw: PackageJson.Raw;
-  #exports?: Map<'.' | `./${string}`, PackageJson.Export>;
+  #entryPoints?: Map<'.' | `./${string}`, PackageJson.EntryPoint>;
 
   constructor(project: ProjectConfig, raw: PackageJson.Raw = loadPackageJson(project)) {
     this.#raw = raw;
   }
 
+  /**
+   * Raw `package.json` contents.
+   */
   get raw(): PackageJson.Raw {
     return this.#raw;
   }
 
-  get exports(): ReadonlyMap<'.' | `./${string}`, PackageJson.Export> {
-    if (!this.#exports) {
+  /**
+   * Read-only map of package entry points with exported paths or patterns as their keys.
+   */
+  get entryPoints(): ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint> {
+    if (!this.#entryPoints) {
 
-      const items = new Map<'.' | `./${string}`, ExportItem[]>();
+      const items = new Map<'.' | `./${string}`, PackageJson$ExportItem[]>();
 
       for (const item of this.#listExports()) {
 
@@ -38,13 +44,13 @@ export class PackageJson {
         }
       }
 
-      this.#exports = new Map([...items].map(([path, items]) => [path, new PackageJson$Export(items)]));
+      this.#entryPoints = new Map([...items].map(([path, items]) => [path, new PackageJson$EntryPoint(path, items)]));
     }
 
-    return this.#exports;
+    return this.#entryPoints;
   }
 
-  *#listExports(): IterableIterator<ExportItem> {
+  *#listExports(): IterableIterator<PackageJson$ExportItem> {
 
     const { exports } = this.#raw;
 
@@ -58,7 +64,7 @@ export class PackageJson {
   *#condExports(
       conditions: readonly string[],
       exports: PackageJson.TopConditionalExports | PackageJson.PathExports | `./${string}`,
-  ): IterableIterator<ExportItem> {
+  ): IterableIterator<PackageJson$ExportItem> {
     if (typeof exports === 'string') {
       yield { path: '.', conditions, target: exports };
 
@@ -78,7 +84,7 @@ export class PackageJson {
       path: '.' | `./${string}`,
       conditions: readonly string[],
       exports: PackageJson.ConditionalExports | `./${string}`,
-  ): IterableIterator<ExportItem> {
+  ): IterableIterator<PackageJson$ExportItem> {
     if (typeof exports === 'string') {
       yield { path, conditions, target: exports };
 
@@ -92,17 +98,20 @@ export class PackageJson {
 
 }
 
-export interface ExportItem {
+interface PackageJson$ExportItem {
   readonly path: '.' | `./${string}`;
   readonly conditions: readonly string[];
   readonly target: `./${string}`;
 }
 
-class PackageJson$Export implements PackageJson.Export {
+class PackageJson$EntryPoint implements PackageJson.EntryPoint {
 
+  readonly #path: '.' | `./${string}`;
   #targetsByCondition = new Map<string, Set<`./${string}`>>();
 
-  constructor(items: readonly ExportItem[]) {
+  constructor(path: '.' | `./${string}`, items: readonly PackageJson$ExportItem[]) {
+    this.#path = path;
+
     for (const { conditions, target } of items) {
       for (const condition of conditions.length ? conditions : ['default']) {
 
@@ -116,6 +125,10 @@ class PackageJson$Export implements PackageJson.Export {
         targets.add(target);
       }
     }
+  }
+
+  get path(): '.' | `./${string}` {
+    return this.#path;
   }
 
   withConditions(...conditions: string[]): `./${string}` | undefined {
@@ -159,8 +172,24 @@ class PackageJson$Export implements PackageJson.Export {
 
 export namespace PackageJson {
 
-  export interface Export {
+  /**
+   * Entry corresponding to package
+   * [entry point](https://nodejs.org/dist/latest/docs/api/packages.html#package-entry-points) within `package.json`.
+   */
+  export interface EntryPoint {
 
+    /**
+     * Exported path or pattern.
+     */
+    readonly path: '.' | `./${string}`;
+
+    /**
+     * Searches for path or pattern matching to all of provided conditions.
+     *
+     * @param conditions - Required export conditions. When missing, searches for `default` one.
+     *
+     * @returns Matching path or pattern, or `undefined` when not found.
+     */
     withConditions(...conditions: string[]): `./${string}` | undefined;
 
   }
@@ -169,6 +198,7 @@ export namespace PackageJson {
    * Subset of [package.json](https://docs.npmjs.com/cli/v6/configuring-npm/package-json) properties.
    */
   export interface Raw {
+    readonly name?: string | undefined;
     readonly exports?: Exports | undefined;
     readonly dependencies?: Dependencies;
     readonly devDependencies?: Dependencies;
