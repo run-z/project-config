@@ -28,6 +28,15 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
     this.#targets = new ProjectTargets(this, targets);
   }
 
+  /**
+   * A reference to itself.
+   *
+   * Allows to use project configuration instance as initialization options.
+   */
+  get project(): this {
+    return this;
+  }
+
   get rootDir(): string {
     return this.#rootDir;
   }

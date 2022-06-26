@@ -12,17 +12,36 @@ import { ProjectConfig } from '../project-config.js';
  */
 export class ProjectRollup {
 
+  /**
+   * Configures and builds Rollup options.
+   *
+   * @param init - Rollup initialization options.
+   *
+   * @returns A promise resolved to Rollup options.
+   */
+  static async build(this: void, init?: ProjectRollupInit): Promise<RollupOptions> {
+    return await new ProjectRollup(init).build();
+  }
+
   readonly #project: ProjectConfig;
 
   /**
    * Constructs rollup configuration for the project.
    *
-   * @param project - Target project configuration.
+   * @param init - Rollup initialization options.
    */
-  constructor(project: ProjectConfig) {
+  constructor(init: ProjectRollupInit = {}) {
+
+    const { project = new ProjectConfig() } = init;
+
     this.#project = project;
   }
 
+  /**
+   * Builds Rollup options.
+   *
+   * @returns A promise resolved to Rollup options.
+   */
   async build(): Promise<RollupOptions> {
 
     const { entryFile } = this.#project.sources;
@@ -109,5 +128,19 @@ export class ProjectRollup {
       return externals.has(id);
     };
   }
+
+}
+
+/**
+ * Rollup initialization options.
+ */
+export interface ProjectRollupInit {
+
+  /**
+   * Project configuration.
+   *
+   * New one will be constructed if omitted.
+   */
+  readonly project?: ProjectConfig;
 
 }
