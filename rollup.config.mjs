@@ -13,6 +13,7 @@ externalModules.add('typescript');
 export default defineConfig({
   input: {
     'project-config': './src/mod.ts',
+    'project-config.jest': './src/jest/mod.ts',
     'project-config.rollup': './src/rollup/mod.ts',
   },
   plugins: [
@@ -26,6 +27,9 @@ export default defineConfig({
     return id.startsWith('node:') || externalModules.has(id) || id.startsWith('rollup');
   },
   manualChunks(id) {
+    if (id.startsWith(path.resolve('src', 'jest'))) {
+      return 'project-config.jest';
+    }
     if (id.startsWith(path.resolve('src', 'rollup'))) {
       return 'project-config.rollup';
     }
@@ -45,6 +49,7 @@ export default defineConfig({
           declarationMap: true,
         },
         entries: {
+          jest: { file: 'project-config.jest.d.ts' },
           rollup: { file: 'project-config.rollup.d.ts' },
         },
       }),
