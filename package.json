@@ -22,6 +22,11 @@
       "import": "./dist/project-config.js",
       "require": "./dist/project-config.cjs"
     },
+    "./jest": {
+      "types": "./dist/project-config.jest.d.ts",
+      "import": "./dist/project-config.jest.js",
+      "require": "./dist/project-config.jest.cjs"
+    },
     "./rollup": {
       "types": "./dist/project-config.rollup.d.ts",
       "import": "./dist/project-config.rollup.js",
@@ -29,11 +34,31 @@
     }
   },
   "peerDependencies": {
+    "@swc/core": "^1.2.210",
+    "@swc/jest": "^0.2.21",
+    "jest": "^28.1.2",
+    "jest-junit": "^14.0.0",
     "rollup": "^2.76.0",
+    "ts-jest": "^28.0.5",
     "typescript": "^4.7.4"
   },
   "peerDependenciesMeta": {
+    "@swc/core": {
+      "optional": true
+    },
+    "@swc/jest": {
+      "optional": true
+    },
+    "jest": {
+      "optional": true
+    },
+    "jest-juni": {
+      "optional": true
+    },
     "rollup": {
+      "optional": true
+    },
+    "ts-jest": {
       "optional": true
     }
   },
@@ -43,17 +68,23 @@
     "rollup-plugin-typescript2": "^0.32.1"
   },
   "devDependencies": {
+    "@jest/types": "^28.1.1",
     "@run-z/eslint-config": "^3.1.1",
     "@run-z/prettier-config": "^2.0.0",
+    "@swc/core": "^1.2.210",
+    "@swc/jest": "^0.2.21",
     "@types/node": "^16.11.43",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "eslint": "^8.19.0",
     "gh-pages": "^4.0.0",
+    "jest": "^28.1.2",
+    "jest-junit": "^14.0.0",
     "prettier": "^2.7.1",
     "rollup": "^2.76.0",
     "run-z": "=1.10.0-bootstrap",
     "shx": "^0.3.4",
+    "ts-jest": "^28.0.5",
     "tslib": "^2.4.0",
     "typedoc": "^0.23.6",
     "typescript": "^4.7.4"

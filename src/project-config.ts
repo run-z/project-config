@@ -3,6 +3,7 @@ import process from 'node:process';
 import { PackageJson } from './package/package-json.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
+import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-typescript.js';
 
 /**
  * Project configuration.
@@ -13,6 +14,7 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
   readonly #sourceDir: string;
   readonly #distDir: string;
   readonly #buildDir: string;
+  readonly #typescript: ProjectTypescript;
   #packageJson?: PackageJson;
   #exports?: Promise<ReadonlyMap<string, ProjectExport>>;
   #mainEntry?: Promise<ProjectEntry>;
@@ -29,12 +31,14 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
       sourceDir = 'src',
       distDir = 'dist',
       buildDir = 'target',
+      typescript,
     } = init;
 
     this.#rootDir = path.resolve(rootDir);
     this.#sourceDir = path.resolve(this.#rootDir, sourceDir);
     this.#distDir = path.resolve(this.#rootDir, distDir);
     this.#buildDir = path.resolve(this.#rootDir, buildDir);
+    this.#typescript = new ProjectTypescript(this, typescript);
   }
 
   /**
@@ -67,6 +71,13 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
    */
   get packageJson(): PackageJson {
     return this.#packageJson ||= new PackageJson(this);
+  }
+
+  /**
+   * TypeScript configuration of the project.
+   */
+  get typescript(): ProjectTypescript {
+    return this.#typescript;
   }
 
   /**
@@ -137,29 +148,36 @@ export interface ProjectInit {
   /**
    * Root project directory.
    *
-   * Defaults to current working directory.
+   * @defaultValue current working directory.
    */
   readonly rootDir?: string | undefined;
 
   /**
    * Root source files directory relative to {@link rootDir project root}.
    *
-   * Defaults to `src`.
+   * @defaultValue `src`.
    */
   readonly sourceDir?: string | undefined;
 
   /**
    * Distributable files` directory relative to {@link rootDir project root}.
    *
-   * Defaults to `dist`
+   * @defaultValue `dist`
    */
   readonly distDir?: string | undefined;
 
   /**
    * Temporal build directory relative to {@link rootDir project root}.
    *
-   * Defaults to `target`.
+   * @defaultValue `target`.
    */
   readonly buildDir?: string | undefined;
+
+  /**
+   * TypeScript initialization options.
+   *
+   * @defaultValue Loaded from `tsconfig.json`.
+   */
+  readonly typescript?: ProjectTypescriptInit;
 
 }
