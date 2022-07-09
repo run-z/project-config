@@ -57,10 +57,15 @@ export class ProjectExport extends ProjectEntry {
    *
    * @param init - Export initialization options.
    */
-  protected constructor(init: Required<ProjectExportInit> & { readonly distFile: string }) {
+  protected constructor(
+      init: Required<ProjectExportInit> & {
+        readonly project: ProjectConfig;
+        readonly distFile: string;
+      },
+  ) {
 
     const {
-      project = new ProjectConfig(),
+      project,
       entryPoint,
       sourceFile,
       distFile,
