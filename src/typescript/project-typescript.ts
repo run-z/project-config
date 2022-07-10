@@ -12,6 +12,7 @@ export class ProjectTypescript implements ProjectTypescriptInit, Required<Projec
   readonly #tsconfig: string;
   readonly #customCompilerOptions: RawCompilerOptions | undefined;
   #compilerOptions?: RawCompilerOptions;
+  #tscOptions?: ts.CompilerOptions;
 
   /**
    * Constructs TypeScript configuration.
@@ -29,6 +30,10 @@ export class ProjectTypescript implements ProjectTypescriptInit, Required<Projec
     this.#project = project;
     this.#tsconfig = tsconfig;
     this.#customCompilerOptions = compilerOptions;
+  }
+
+  get project(): ProjectConfig {
+    return this.#project;
   }
 
   /**
@@ -53,14 +58,7 @@ export class ProjectTypescript implements ProjectTypescriptInit, Required<Projec
     };
 
     if (error) {
-
-      const formatHost: ts.FormatDiagnosticsHost = {
-        getCurrentDirectory: () => this.#project.rootDir,
-        getNewLine: () => ts.sys.newLine,
-        getCanonicalFileName: ts.sys.useCaseSensitiveFileNames ? f => f : f => f.toLowerCase(),
-      };
-
-      console.error(ts.formatDiagnosticsWithColorAndContext([error], formatHost));
+      console.error(ts.formatDiagnosticsWithColorAndContext([error], this.#errorFormatHost()));
 
       throw new Error(`Can not parse TypeScript configuration: ${this.#tsconfig}`);
     }
@@ -68,6 +66,34 @@ export class ProjectTypescript implements ProjectTypescriptInit, Required<Projec
     return this.#compilerOptions = {
       ...config.compilerOptions,
       ...this.#customCompilerOptions,
+    };
+  }
+
+  get tscOptions(): ts.CompilerOptions {
+    if (this.#tscOptions) {
+      return this.#tscOptions;
+    }
+
+    const { options, errors } = ts.convertCompilerOptionsFromJson(
+        this.compilerOptions,
+        this.project.rootDir,
+        'tsconfig.custom.json',
+    );
+
+    if (errors.length) {
+      console.error(ts.formatDiagnosticsWithColorAndContext(errors, this.#errorFormatHost()));
+
+      throw new Error(`Can not parse TypeScript compiler options: ${this.#tsconfig}`);
+    }
+
+    return this.#tscOptions = options;
+  }
+
+  #errorFormatHost(): ts.FormatDiagnosticsHost {
+    return {
+      getCurrentDirectory: () => this.#project.rootDir,
+      getNewLine: () => ts.sys.newLine,
+      getCanonicalFileName: ts.sys.useCaseSensitiveFileNames ? f => f : f => f.toLowerCase(),
     };
   }
 

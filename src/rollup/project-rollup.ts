@@ -11,7 +11,7 @@ import { ProjectEntry } from '../project-entry.js';
 /**
  * Rollup configuration.
  */
-export class ProjectRollup {
+export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupInit> {
 
   /**
    * Configures and builds Rollup options.
@@ -38,6 +38,10 @@ export class ProjectRollup {
     this.#project = project;
   }
 
+  get project(): ProjectConfig {
+    return this.#project;
+  }
+
   /**
    * Builds Rollup options.
    *
@@ -48,13 +52,14 @@ export class ProjectRollup {
     const { sourceDir, distDir, buildDir } = this.#project;
     const entries = await this.#project.entries;
     const mainEntry = await this.#project.mainEntry;
-    const tsconfig = 'tsconfig.json';
     const chunksByDir: [string, string][] = ([...entries].map(([name, entry]) => {
 
       const entryDir = path.dirname(path.resolve(sourceDir, entry.sourceFile));
 
       return [`${entryDir}/${path.sep}`, `_${name}.js`];
     }));
+
+    const { tsconfig, compilerOptions, tscOptions } = this.project.typescript;
 
     return {
       input: Object.fromEntries(
@@ -64,6 +69,7 @@ export class ProjectRollup {
         ts({
           typescript,
           tsconfig,
+          tsconfigOverride: compilerOptions,
           cacheRoot: path.join(buildDir, '.rts2_cache'),
         }),
         sourcemaps(),
@@ -93,11 +99,12 @@ export class ProjectRollup {
         plugins: [
           flatDts({
             tsconfig,
-            lib: true,
-            file: this.#dtsName(mainEntry),
             compilerOptions: {
+              ...tscOptions,
               declarationMap: true,
             },
+            lib: true,
+            file: this.#dtsName(mainEntry),
             entries: Object.fromEntries(
                 ([...entries]
                     .filter(item => item[1] !== mainEntry)
@@ -178,6 +185,6 @@ export interface ProjectRollupInit {
    *
    * New one will be constructed if omitted.
    */
-  readonly project?: ProjectConfig;
+  readonly project?: ProjectConfig | undefined;
 
 }
