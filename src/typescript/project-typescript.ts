@@ -21,11 +21,7 @@ export class ProjectTypescript implements ProjectTypescriptInit, Required<Projec
    * @param init - TypeScript initialization options.
    */
   constructor(project: ProjectConfig, init: ProjectTypescriptInit = {}) {
-
-    const {
-      tsconfig = 'tsconfig.json',
-      compilerOptions,
-    } = init;
+    const { tsconfig = 'tsconfig.json', compilerOptions } = init;
 
     this.#project = project;
     this.#tsconfig = tsconfig;
@@ -63,10 +59,10 @@ export class ProjectTypescript implements ProjectTypescriptInit, Required<Projec
       throw new Error(`Can not parse TypeScript configuration: ${this.#tsconfig}`);
     }
 
-    return this.#compilerOptions = {
+    return (this.#compilerOptions = {
       ...config.compilerOptions,
       ...this.#customCompilerOptions,
-    };
+    });
   }
 
   get tscOptions(): ts.CompilerOptions {
@@ -75,9 +71,9 @@ export class ProjectTypescript implements ProjectTypescriptInit, Required<Projec
     }
 
     const { options, errors } = ts.convertCompilerOptionsFromJson(
-        this.compilerOptions,
-        this.project.rootDir,
-        'tsconfig.custom.json',
+      this.compilerOptions,
+      this.project.rootDir,
+      'tsconfig.custom.json',
     );
 
     if (errors.length) {
@@ -86,7 +82,7 @@ export class ProjectTypescript implements ProjectTypescriptInit, Required<Projec
       throw new Error(`Can not parse TypeScript compiler options: ${this.#tsconfig}`);
     }
 
-    return this.#tscOptions = options;
+    return (this.#tscOptions = options);
   }
 
   #errorFormatHost(): ts.FormatDiagnosticsHost {
@@ -103,7 +99,6 @@ export class ProjectTypescript implements ProjectTypescriptInit, Required<Projec
  * TypeScript initialization options.
  */
 export interface ProjectTypescriptInit {
-
   /**
    * TypeScript's configuration file path relative to {@link ProjectConfig#rootDir project root}.
    *
@@ -115,5 +110,4 @@ export interface ProjectTypescriptInit {
    * Compiler options to apply.
    */
   readonly compilerOptions?: RawCompilerOptions | undefined;
-
 }

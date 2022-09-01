@@ -41,10 +41,12 @@ export abstract class ProjectEntry {
    */
   get name(): string {
     if (!this.#name) {
-
       const distFile = this.distFile;
       const fileExt = path.extname(distFile);
-      const fileName = path.relative(this.#project.distDir, path.resolve(this.#project.distDir, distFile));
+      const fileName = path.relative(
+        this.#project.distDir,
+        path.resolve(this.#project.distDir, distFile),
+      );
 
       this.#name = fileExt ? fileName.slice(0, -fileExt.length) : fileExt;
     }

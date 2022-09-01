@@ -32,7 +32,6 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
    * @param init - Rollup initialization options.
    */
   constructor(init: ProjectRollupInit = {}) {
-
     const { project = new ProjectConfig() } = init;
 
     this.#project = project;
@@ -48,22 +47,20 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
    * @returns A promise resolved to Rollup options.
    */
   async build(): Promise<RollupOptions> {
-
     const { sourceDir, distDir, buildDir } = this.#project;
     const entries = await this.#project.entries;
     const mainEntry = await this.#project.mainEntry;
-    const chunksByDir: [string, string][] = ([...entries].map(([name, entry]) => {
-
+    const chunksByDir: [string, string][] = [...entries].map(([name, entry]) => {
       const entryDir = path.dirname(path.resolve(sourceDir, entry.sourceFile));
 
       return [`${entryDir}/${path.sep}`, `_${name}.js`];
-    }));
+    });
 
     const { tsconfig, compilerOptions, tscOptions } = this.project.typescript;
 
     return {
       input: Object.fromEntries(
-          [...entries].map(([name, entry]) => [name, path.resolve(sourceDir, entry.sourceFile)]),
+        [...entries].map(([name, entry]) => [name, path.resolve(sourceDir, entry.sourceFile)]),
       ),
       plugins: [
         ts({
@@ -81,7 +78,6 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
         sourcemap: true,
         entryFileNames: chunk => entries.get(chunk.name)?.distFile || '',
         manualChunks: (moduleId, moduleApi) => {
-
           const moduleInfo = moduleApi.getModuleInfo(moduleId);
 
           if (!moduleInfo || moduleInfo.isExternal) {
@@ -106,9 +102,9 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
             lib: true,
             file: this.#dtsName(mainEntry),
             entries: Object.fromEntries(
-                ([...entries]
-                    .filter(item => item[1] !== mainEntry)
-                    .map(([name, entry]) => [name, { file: this.#dtsName(entry) }])),
+              [...entries]
+                .filter(item => item[1] !== mainEntry)
+                .map(([name, entry]) => [name, { file: this.#dtsName(entry) }]),
             ),
           }),
         ],
@@ -117,7 +113,6 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
   }
 
   #dtsName(entry: ProjectEntry): string {
-
     const projectExport = entry.toExport();
 
     if (projectExport) {
@@ -134,7 +129,6 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
   }
 
   #externalModules(): (this: void, id: string) => boolean {
-
     const {
       dependencies = {},
       devDependencies = {},
@@ -179,12 +173,10 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
  * Rollup initialization options.
  */
 export interface ProjectRollupInit {
-
   /**
    * Project configuration.
    *
    * New one will be constructed if omitted.
    */
   readonly project?: ProjectConfig | undefined;
-
 }

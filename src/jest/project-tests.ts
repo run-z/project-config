@@ -26,8 +26,11 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
    * @param init - Tests initialization options.
    */
   constructor(init: ProjectTestsInit = {}) {
-
-    const { project = new ProjectConfig(), runner = ProjectTests$defaultRunner(), options = {} } = init;
+    const {
+      project = new ProjectConfig(),
+      runner = ProjectTests$defaultRunner(),
+      options = {},
+    } = init;
 
     this.#project = project;
     this.#runner = runner;
@@ -52,10 +55,10 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
    * @returns A promise resolved to Jest options.
    */
   build(): Promise<InitialOptionsTsJest> {
-
     const swc = this.runner === 'swc';
     const options = this.#options;
-    const config: InitialOptionsTsJest & Required<Pick<InitialOptionsTsJest, 'globals' | 'reporters' | 'transform'>> = {
+    const config: InitialOptionsTsJest &
+      Required<Pick<InitialOptionsTsJest, 'globals' | 'reporters' | 'transform'>> = {
       ...options,
       extensionsToTreatAsEsm: options.extensionsToTreatAsEsm ?? ['.ts'],
       globals: {
@@ -66,8 +69,8 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
         ...options.moduleNameMapper,
       },
       reporters: options.reporters
-          ? [...options.reporters]
-          : [
+        ? [...options.reporters]
+        : [
             'default',
             [
               'jest-junit',
@@ -87,8 +90,8 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
 
     if (config.preset == null) {
       if (swc) {
-
-        const { experimentalDecorators, emitDecoratorMetadata } = this.#project.typescript.compilerOptions;
+        const { experimentalDecorators, emitDecoratorMetadata }
+          = this.#project.typescript.compilerOptions;
 
         config.transform['^.+\\.(t|j)sx?$'] = [
           '@swc/jest',
@@ -131,7 +134,9 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
     if (collectCoverage) {
       config.collectCoverage = true;
 
-      const srcDir = path.relative(this.#project.rootDir, this.#project.sourceDir).replaceAll(path.sep, '/');
+      const srcDir = path
+        .relative(this.#project.rootDir, this.#project.sourceDir)
+        .replaceAll(path.sep, '/');
 
       config.collectCoverageFrom = options.collectCoverageFrom ?? [
         `${srcDir}/**/*.ts`,
@@ -139,7 +144,8 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
         `!${srcDir}/spec/**`,
         '!**/node_modules/**',
       ];
-      config.coverageDirectory = options.coverageDirectory ?? path.join(this.#project.buildDir, 'coverage');
+      config.coverageDirectory
+        = options.coverageDirectory ?? path.join(this.#project.buildDir, 'coverage');
       config.coverageThreshold = options.coverageThreshold ?? {
         global: {
           statements: 100,
@@ -159,7 +165,6 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
  * Tests initialization options.
  */
 export interface ProjectTestsInit {
-
   /**
    * Project configuration.
    *
@@ -180,15 +185,14 @@ export interface ProjectTestsInit {
    * Jest configuration options to apply.
    */
   readonly options?: InitialOptionsTsJest | undefined;
-
 }
 
 function ProjectTests$defaultRunner(): 'swc' | 'ts-jest' {
   switch (process.env.RUNZ_TEST_RUNNER) {
-  case 'ts-jest':
-    return 'ts-jest';
-  case 'swc':
-  default:
-    return 'swc';
+    case 'ts-jest':
+      return 'ts-jest';
+    case 'swc':
+    default:
+      return 'swc';
   }
 }

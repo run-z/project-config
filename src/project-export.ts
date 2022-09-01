@@ -18,18 +18,19 @@ export class ProjectExport extends ProjectEntry {
    * @returns Promise resolved either to project export instance, or to `undefined` if source file unspecified
    * or can not be found.
    */
-  static async create(this: void, init: ProjectExportInit = {}): Promise<ProjectExport | undefined> {
-
-    const {
-      project = new ProjectConfig(),
-      entryPoint = project.packageJson.entryPoints.get('.'),
-    } = init;
+  static async create(
+    this: void,
+    init: ProjectExportInit = {},
+  ): Promise<ProjectExport | undefined> {
+    const { project = new ProjectConfig(), entryPoint = project.packageJson.entryPoints.get('.') }
+      = init;
 
     if (!entryPoint) {
       return;
     }
 
-    const distFilePath = entryPoint.withConditions('import') || entryPoint.withConditions('default');
+    const distFilePath
+      = entryPoint.withConditions('import') || entryPoint.withConditions('default');
 
     if (!distFilePath) {
       return;
@@ -37,9 +38,7 @@ export class ProjectExport extends ProjectEntry {
 
     const distFile = path.relative(project.distDir, distFilePath);
 
-    const {
-      sourceFile = await ProjectExport$detectSourceFile(project, distFile),
-    } = init;
+    const { sourceFile = await ProjectExport$detectSourceFile(project, distFile) } = init;
 
     if (!sourceFile) {
       return;
@@ -58,18 +57,12 @@ export class ProjectExport extends ProjectEntry {
    * @param init - Export initialization options.
    */
   protected constructor(
-      init: Required<ProjectExportInit> & {
-        readonly project: ProjectConfig;
-        readonly distFile: string;
-      },
+    init: Required<ProjectExportInit> & {
+      readonly project: ProjectConfig;
+      readonly distFile: string;
+    },
   ) {
-
-    const {
-      project,
-      entryPoint,
-      sourceFile,
-      distFile,
-    } = init;
+    const { project, entryPoint, sourceFile, distFile } = init;
 
     super(project);
 
@@ -95,10 +88,12 @@ export class ProjectExport extends ProjectEntry {
    * @returns Matching path or pattern, or `undefined` when not found.
    */
   withConditions(...conditions: string[]): `./${string}` | undefined {
-    return this.entryPoint.withConditions(...conditions)
-        || this.entryPoint.withConditions(
-            ...conditions.filter(condition => condition !== 'import' && condition !== 'default'),
-        );
+    return (
+      this.entryPoint.withConditions(...conditions)
+      || this.entryPoint.withConditions(
+        ...conditions.filter(condition => condition !== 'import' && condition !== 'default'),
+      )
+    );
   }
 
   get isMain(): boolean {
@@ -123,7 +118,6 @@ export class ProjectExport extends ProjectEntry {
  * Project export initialization options.
  */
 export interface ProjectExportInit {
-
   /**
    * Target project configuration.
    *
@@ -146,10 +140,12 @@ export interface ProjectExportInit {
    * Will be reconstructed by export path when omitted.
    */
   readonly sourceFile?: string | undefined;
-
 }
 
-async function ProjectExport$detectSourceFile(project: ProjectConfig, distFile: string): Promise<string | undefined> {
+async function ProjectExport$detectSourceFile(
+  project: ProjectConfig,
+  distFile: string,
+): Promise<string | undefined> {
   const ext = path.extname(distFile);
   const name = ext ? distFile.slice(0, -ext.length) : ext;
   let parts = name.split(path.sep);
@@ -165,13 +161,11 @@ const SOURCE_FILE_NAMES = [null, 'mod', 'main', 'index'];
 const SOURCE_FILE_EXTENSIONS = ['.ts', '.mts', '.cts'];
 
 async function ProjectExport$findSourceFile(
-    project: ProjectConfig,
-    searchPath: readonly string[],
+  project: ProjectConfig,
+  searchPath: readonly string[],
 ): Promise<string | undefined> {
-
   for (const fileName of SOURCE_FILE_NAMES) {
     for (const extension of SOURCE_FILE_EXTENSIONS) {
-
       let filePath: string[];
 
       if (fileName) {

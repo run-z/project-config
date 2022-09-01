@@ -30,11 +30,9 @@ export class PackageJson {
    */
   get entryPoints(): ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint> {
     if (!this.#entryPoints) {
-
       const items = new Map<'.' | `./${string}`, PackageJson$ExportItem[]>();
 
       for (const item of this.#listExports()) {
-
         const found = items.get(item.path);
 
         if (found) {
@@ -44,14 +42,15 @@ export class PackageJson {
         }
       }
 
-      this.#entryPoints = new Map([...items].map(([path, items]) => [path, new PackageJson$EntryPoint(path, items)]));
+      this.#entryPoints = new Map(
+        [...items].map(([path, items]) => [path, new PackageJson$EntryPoint(path, items)]),
+      );
     }
 
     return this.#entryPoints;
   }
 
   *#listExports(): IterableIterator<PackageJson$ExportItem> {
-
     const { exports } = this.#raw;
 
     if (!exports) {
@@ -62,8 +61,8 @@ export class PackageJson {
   }
 
   *#condExports(
-      conditions: readonly string[],
-      exports: PackageJson.TopConditionalExports | PackageJson.PathExports | `./${string}`,
+    conditions: readonly string[],
+    exports: PackageJson.TopConditionalExports | PackageJson.PathExports | `./${string}`,
   ): IterableIterator<PackageJson$ExportItem> {
     if (typeof exports === 'string') {
       yield { path: '.', conditions, target: exports };
@@ -81,9 +80,9 @@ export class PackageJson {
   }
 
   *#pathExports(
-      path: '.' | `./${string}`,
-      conditions: readonly string[],
-      exports: PackageJson.ConditionalExports | `./${string}`,
+    path: '.' | `./${string}`,
+    conditions: readonly string[],
+    exports: PackageJson.ConditionalExports | `./${string}`,
   ): IterableIterator<PackageJson$ExportItem> {
     if (typeof exports === 'string') {
       yield { path, conditions, target: exports };
@@ -114,7 +113,6 @@ class PackageJson$EntryPoint implements PackageJson.EntryPoint {
 
     for (const { conditions, target } of items) {
       for (const condition of conditions.length ? conditions : ['default']) {
-
         let targets = this.#targetsByCondition.get(condition);
 
         if (!targets) {
@@ -139,7 +137,6 @@ class PackageJson$EntryPoint implements PackageJson.EntryPoint {
     let candidates: Set<`./${string}`> | undefined;
 
     for (const condition of conditions.length ? conditions : ['default']) {
-
       const matching = this.#targetsByCondition.get(condition);
 
       if (!matching) {
@@ -171,13 +168,11 @@ class PackageJson$EntryPoint implements PackageJson.EntryPoint {
 }
 
 export namespace PackageJson {
-
   /**
    * Entry corresponding to package
    * [entry point](https://nodejs.org/dist/latest/docs/api/packages.html#package-entry-points) within `package.json`.
    */
   export interface EntryPoint {
-
     /**
      * Exported path or pattern.
      */
@@ -191,7 +186,6 @@ export namespace PackageJson {
      * @returns Matching path or pattern, or `undefined` when not found.
      */
     withConditions(...conditions: string[]): `./${string}` | undefined;
-
   }
 
   /**
@@ -208,35 +202,25 @@ export namespace PackageJson {
   }
 
   export type Dependencies = {
-
     readonly [name in string]: string;
-
   };
 
   export type Exports = PathExports | TopConditionalExports | `./${string}`;
 
   export type PathExports = {
-
     readonly [key in '.' | `./${string}`]: ConditionalExports | `./${string}`;
-
   };
 
   export type ConditionalExports = {
-
     readonly [key in string]: ConditionalExports | `./${string}`;
-
   };
 
   export type TopConditionalExports = {
-
     readonly [key in string]: TopConditionalExports | PathExports | `./${string}`;
-
   };
-
 }
 
 function loadPackageJson(project: ProjectConfig): PackageJson.Raw {
-
   const require = module.createRequire(import.meta.url);
 
   return require(path.join(project.rootDir, 'package.json')) as PackageJson.Raw;

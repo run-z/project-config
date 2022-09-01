@@ -25,7 +25,6 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
    * @param init - Project initialization options.
    */
   constructor(init: ProjectInit = {}) {
-
     const {
       rootDir = process.cwd(),
       sourceDir = 'src',
@@ -70,7 +69,7 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
    * `package.json` contents.
    */
   get packageJson(): PackageJson {
-    return this.#packageJson ||= new PackageJson(this);
+    return (this.#packageJson ||= new PackageJson(this));
   }
 
   /**
@@ -92,7 +91,6 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
   }
 
   async #findMainEntry(): Promise<ProjectEntry> {
-
     const entries = await this.entries;
 
     for (const entry of entries.values()) {
@@ -123,16 +121,12 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
   }
 
   async #loadExports(): Promise<ReadonlyMap<string, ProjectExport>> {
-
     const entries = await Promise.all(
-        [...this.packageJson.entryPoints.values()].map(
-            async entryPoint => {
+      [...this.packageJson.entryPoints.values()].map(async entryPoint => {
+        const entry = await ProjectExport.create({ project: this, entryPoint });
 
-              const entry = await ProjectExport.create({ project: this, entryPoint });
-
-              return entry ? [entry.name, entry] as const : undefined;
-            },
-        ),
+        return entry ? ([entry.name, entry] as const) : undefined;
+      }),
     );
 
     return new Map(entries.filter(entry => !!entry) as (readonly [string, ProjectExport])[]);
@@ -144,7 +138,6 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
  * Project initialization options.
  */
 export interface ProjectInit {
-
   /**
    * Root project directory.
    *
@@ -179,5 +172,4 @@ export interface ProjectInit {
    * @defaultValue Loaded from `tsconfig.json`.
    */
   readonly typescript?: ProjectTypescriptInit;
-
 }
