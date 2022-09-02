@@ -47,7 +47,7 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
    * @returns A promise resolved to Rollup options.
    */
   async build(): Promise<RollupOptions> {
-    const { sourceDir, distDir, buildDir } = this.#project;
+    const { sourceDir, distDir, targetDir } = this.#project;
     const entries = await this.#project.entries;
     const mainEntry = await this.#project.mainEntry;
     const chunksByDir: [string, string][] = [...entries].map(([name, entry]) => {
@@ -67,7 +67,7 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
           typescript,
           tsconfig,
           tsconfigOverride: compilerOptions,
-          cacheRoot: path.join(buildDir, '.rts2_cache'),
+          cacheRoot: path.join(targetDir, '.rts2_cache'),
         }),
         sourcemaps(),
       ],
@@ -159,7 +159,7 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
           slashIdx = id.indexOf('/', slashIdx + 1);
         }
         if (slashIdx > 0) {
-          id = id.substr(0, slashIdx);
+          id = id.slice(0, slashIdx);
         }
       }
 

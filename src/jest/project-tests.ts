@@ -76,7 +76,7 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
               'jest-junit',
               {
                 suiteName: 'All Tests',
-                outputDirectory: path.join(this.#project.buildDir, 'test-results'),
+                outputDirectory: path.join(this.#project.targetDir, 'test-results'),
                 classNameTemplate: '{classname}: {title}',
                 titleTemplate: '{classname}: {title}',
                 ancestorSeparator: ' › ',
@@ -145,7 +145,7 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
         '!**/node_modules/**',
       ];
       config.coverageDirectory
-        = options.coverageDirectory ?? path.join(this.#project.buildDir, 'coverage');
+        = options.coverageDirectory ?? path.join(this.#project.targetDir, 'coverage');
       config.coverageThreshold = options.coverageThreshold ?? {
         global: {
           statements: 100,

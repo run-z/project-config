@@ -13,7 +13,7 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
   readonly #rootDir: string;
   readonly #sourceDir: string;
   readonly #distDir: string;
-  readonly #buildDir: string;
+  readonly #targetDir: string;
   readonly #typescript: ProjectTypescript;
   #packageJson?: PackageJson;
   #exports?: Promise<ReadonlyMap<string, ProjectExport>>;
@@ -29,14 +29,14 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
       rootDir = process.cwd(),
       sourceDir = 'src',
       distDir = 'dist',
-      buildDir = 'target',
+      targetDir = 'target',
       typescript,
     } = init;
 
     this.#rootDir = path.resolve(rootDir);
     this.#sourceDir = path.resolve(this.#rootDir, sourceDir);
     this.#distDir = path.resolve(this.#rootDir, distDir);
-    this.#buildDir = path.resolve(this.#rootDir, buildDir);
+    this.#targetDir = path.resolve(this.#rootDir, targetDir);
     this.#typescript = new ProjectTypescript(this, typescript);
   }
 
@@ -57,8 +57,8 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
     return this.#sourceDir;
   }
 
-  get buildDir(): string {
-    return this.#buildDir;
+  get targetDir(): string {
+    return this.#targetDir;
   }
 
   get distDir(): string {
@@ -160,11 +160,13 @@ export interface ProjectInit {
   readonly distDir?: string | undefined;
 
   /**
-   * Temporal build directory relative to {@link rootDir project root}.
+   * Directory containing build targets relative to {@link rootDir project root}.
+   *
+   * Unlike {@link distDir}, this one is not supposed to be published at NPM.
    *
    * @defaultValue `target`.
    */
-  readonly buildDir?: string | undefined;
+  readonly targetDir?: string | undefined;
 
   /**
    * TypeScript initialization options.
