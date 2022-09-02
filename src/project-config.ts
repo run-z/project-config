@@ -1,20 +1,20 @@
 import path from 'node:path';
-import process from 'node:process';
 import { PackageJson } from './package/package-json.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
+import { ProjectOutput, ProjectOutputInit } from './project-output.js';
 import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-typescript.js';
 
 /**
  * Project configuration.
  */
-export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
+export class ProjectConfig {
 
+  readonly #init: ProjectInit;
   readonly #rootDir: string;
   readonly #sourceDir: string;
-  readonly #distDir: string;
-  readonly #targetDir: string;
   readonly #typescript: ProjectTypescript;
+  #output?: Promise<ProjectOutput>;
   #packageJson?: PackageJson;
   #exports?: Promise<ReadonlyMap<string, ProjectExport>>;
   #mainEntry?: Promise<ProjectEntry>;
@@ -25,18 +25,12 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
    * @param init - Project initialization options.
    */
   constructor(init: ProjectInit = {}) {
-    const {
-      rootDir = process.cwd(),
-      sourceDir = 'src',
-      distDir = 'dist',
-      targetDir = 'target',
-      typescript,
-    } = init;
+    this.#init = init;
+
+    const { rootDir = process.cwd(), sourceDir = 'src', typescript } = init;
 
     this.#rootDir = path.resolve(rootDir);
-    this.#sourceDir = path.resolve(this.#rootDir, sourceDir);
-    this.#distDir = path.resolve(this.#rootDir, distDir);
-    this.#targetDir = path.resolve(this.#rootDir, targetDir);
+    this.#sourceDir = path.resolve(rootDir, sourceDir);
     this.#typescript = new ProjectTypescript(this, typescript);
   }
 
@@ -49,20 +43,35 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
     return this;
   }
 
+  /**
+   * Root project directory.
+   */
   get rootDir(): string {
     return this.#rootDir;
   }
 
+  /**
+   * Root source files directory.
+   */
   get sourceDir(): string {
     return this.#sourceDir;
   }
 
-  get targetDir(): string {
-    return this.#targetDir;
-  }
+  /**
+   * Promise resolved to project output configuration.
+   */
+  get output(): Promise<ProjectOutput> {
+    if (!this.#output) {
+      return (this.#output = ProjectOutput.create(this, this.#init));
+    }
 
-  get distDir(): string {
-    return this.#distDir;
+    return this.#output.then(layout => {
+      if (layout.isSaved) {
+        return layout;
+      }
+
+      return (this.#output = ProjectOutput.create(this, this.#init));
+    });
   }
 
   /**
@@ -137,7 +146,7 @@ export class ProjectConfig implements ProjectInit, Required<ProjectInit> {
 /**
  * Project initialization options.
  */
-export interface ProjectInit {
+export interface ProjectInit extends ProjectOutputInit {
   /**
    * Root project directory.
    *
@@ -151,22 +160,6 @@ export interface ProjectInit {
    * @defaultValue `src`.
    */
   readonly sourceDir?: string | undefined;
-
-  /**
-   * Distributable files` directory relative to {@link rootDir project root}.
-   *
-   * @defaultValue `dist`
-   */
-  readonly distDir?: string | undefined;
-
-  /**
-   * Directory containing build targets relative to {@link rootDir project root}.
-   *
-   * Unlike {@link distDir}, this one is not supposed to be published at NPM.
-   *
-   * @defaultValue `target`.
-   */
-  readonly targetDir?: string | undefined;
 
   /**
    * TypeScript initialization options.

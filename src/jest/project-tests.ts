@@ -54,12 +54,15 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
    *
    * @returns A promise resolved to Jest options.
    */
-  build(): Promise<InitialOptionsTsJest> {
+  async build(): Promise<InitialOptionsTsJest> {
     const swc = this.runner === 'swc';
     const options = this.#options;
+    const output = await this.project.output;
+    const { targetDir, cacheDir } = output;
     const config: InitialOptionsTsJest &
       Required<Pick<InitialOptionsTsJest, 'globals' | 'reporters' | 'transform'>> = {
       ...options,
+      cacheDirectory: path.join(cacheDir, 'jest'),
       extensionsToTreatAsEsm: options.extensionsToTreatAsEsm ?? ['.ts'],
       globals: {
         ...(options.globals || { 'ts-jest': {} }),
@@ -76,7 +79,7 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
               'jest-junit',
               {
                 suiteName: 'All Tests',
-                outputDirectory: path.join(this.#project.targetDir, 'test-results'),
+                outputDirectory: path.join(targetDir, 'test-results'),
                 classNameTemplate: '{classname}: {title}',
                 titleTemplate: '{classname}: {title}',
                 ancestorSeparator: ' › ',
@@ -144,8 +147,7 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
         `!${srcDir}/spec/**`,
         '!**/node_modules/**',
       ];
-      config.coverageDirectory
-        = options.coverageDirectory ?? path.join(this.#project.targetDir, 'coverage');
+      config.coverageDirectory = options.coverageDirectory ?? path.join(targetDir, 'coverage');
       config.coverageThreshold = options.coverageThreshold ?? {
         global: {
           statements: 100,
@@ -156,7 +158,7 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
       };
     }
 
-    return Promise.resolve(config);
+    return config;
   }
 
 }
