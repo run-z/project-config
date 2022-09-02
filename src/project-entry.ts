@@ -1,22 +1,23 @@
 import path from 'node:path';
 import { ProjectConfig } from './project-config.js';
 import { ProjectExport } from './project-export.js';
+import { ProjectOutput } from './project-output.js';
 
 /**
  * Abstract project entry configuration.
  */
 export abstract class ProjectEntry {
 
-  readonly #project: ProjectConfig;
+  readonly #output: ProjectOutput;
   #name?: string;
 
   /**
    * Constructs project entry configuration for the `project`.
    *
-   * @param project - Target project configuration.
+   * @param output - Target project output configuration.
    */
-  constructor(project: ProjectConfig) {
-    this.#project = project;
+  constructor(output: ProjectOutput) {
+    this.#output = output;
   }
 
   /**
@@ -30,13 +31,20 @@ export abstract class ProjectEntry {
    * Target project configuration.
    */
   get project(): ProjectConfig {
-    return this.#project;
+    return this.output.project;
+  }
+
+  /**
+   * Target project output configuration.
+   */
+  get output(): ProjectOutput {
+    return this.#output;
   }
 
   /**
    * Short entry name.
    *
-   * By defaults, equals to {@link distFile distribution file} path relative to {@link ProjectConfig.distDir
+   * By defaults, equals to {@link distFile distribution file} path relative to {@link ProjectOutput#distDir
    * distribution directory} without an extension.
    */
   get name(): string {
@@ -44,8 +52,8 @@ export abstract class ProjectEntry {
       const distFile = this.distFile;
       const fileExt = path.extname(distFile);
       const fileName = path.relative(
-        this.#project.distDir,
-        path.resolve(this.#project.distDir, distFile),
+        this.output.distDir,
+        path.resolve(this.output.distDir, distFile),
       );
 
       this.#name = fileExt ? fileName.slice(0, -fileExt.length) : fileExt;
@@ -55,12 +63,12 @@ export abstract class ProjectEntry {
   }
 
   /**
-   * Path to source file to transpile during the build relative to {@link ProjectConfig.sourceDir sources directory}.
+   * Path to source file to transpile during the build relative to {@link ProjectConfig#sourceDir sources directory}.
    */
   abstract get sourceFile(): string;
 
   /**
-   * Path to distribution file relative to {@link ProjectConfig.distDir distribution directory}.
+   * Path to distribution file relative to {@link ProjectOutput#distDir distribution directory}.
    *
    * This is typically a file listed in `package.json` exports section and generated from
    * {@link sourceFile source file}.

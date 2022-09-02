@@ -4,6 +4,7 @@ import path from 'node:path';
 import { PackageJson } from './package/package-json.js';
 import { ProjectConfig } from './project-config.js';
 import { ProjectEntry } from './project-entry.js';
+import { ProjectOutput } from './project-output.js';
 
 /**
  * Project entry corresponding to {@link PackageJson.EntryPoint package export}.
@@ -36,7 +37,8 @@ export class ProjectExport extends ProjectEntry {
       return;
     }
 
-    const distFile = path.relative(project.distDir, distFilePath);
+    const output = await project.output;
+    const distFile = path.relative(output.distDir, distFilePath);
 
     const { sourceFile = await ProjectExport$detectSourceFile(project, distFile) } = init;
 
@@ -44,7 +46,7 @@ export class ProjectExport extends ProjectEntry {
       return;
     }
 
-    return new ProjectExport({ project, entryPoint, sourceFile, distFile });
+    return new ProjectExport({ output, entryPoint, sourceFile, distFile });
   }
 
   readonly #entryPoint: PackageJson.EntryPoint;
@@ -57,14 +59,14 @@ export class ProjectExport extends ProjectEntry {
    * @param init - Export initialization options.
    */
   protected constructor(
-    init: Required<ProjectExportInit> & {
-      readonly project: ProjectConfig;
+    init: Omit<Required<ProjectExportInit>, 'project'> & {
+      readonly output: ProjectOutput;
       readonly distFile: string;
     },
   ) {
-    const { project, entryPoint, sourceFile, distFile } = init;
+    const { output, entryPoint, sourceFile, distFile } = init;
 
-    super(project);
+    super(output);
 
     this.#entryPoint = entryPoint;
     this.#sourceFile = sourceFile;

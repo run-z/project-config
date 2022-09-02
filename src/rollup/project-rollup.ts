@@ -47,7 +47,9 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
    * @returns A promise resolved to Rollup options.
    */
   async build(): Promise<RollupOptions> {
-    const { sourceDir, distDir, buildDir } = this.#project;
+    const { sourceDir } = this.#project;
+    const output = await this.#project.output;
+    const { distDir, cacheDir } = output;
     const entries = await this.#project.entries;
     const mainEntry = await this.#project.mainEntry;
     const chunksByDir: [string, string][] = [...entries].map(([name, entry]) => {
@@ -67,7 +69,7 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
           typescript,
           tsconfig,
           tsconfigOverride: compilerOptions,
-          cacheRoot: path.join(buildDir, '.rts2_cache'),
+          cacheRoot: path.join(cacheDir, 'rts2'),
         }),
         sourcemaps(),
       ],
@@ -100,11 +102,11 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
               declarationMap: true,
             },
             lib: true,
-            file: this.#dtsName(mainEntry),
+            file: this.#dtsName(distDir, mainEntry),
             entries: Object.fromEntries(
               [...entries]
                 .filter(item => item[1] !== mainEntry)
-                .map(([name, entry]) => [name, { file: this.#dtsName(entry) }]),
+                .map(([name, entry]) => [name, { file: this.#dtsName(distDir, entry) }]),
             ),
           }),
         ],
@@ -112,7 +114,7 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
     };
   }
 
-  #dtsName(entry: ProjectEntry): string {
+  #dtsName(distDir: string, entry: ProjectEntry): string {
     const projectExport = entry.toExport();
 
     if (projectExport) {
@@ -120,7 +122,7 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
       const types = projectExport.withConditions('types');
 
       if (types) {
-        return path.relative(this.#project.distDir, types);
+        return path.relative(distDir, types);
       }
     }
 
@@ -159,7 +161,7 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
           slashIdx = id.indexOf('/', slashIdx + 1);
         }
         if (slashIdx > 0) {
-          id = id.substr(0, slashIdx);
+          id = id.slice(0, slashIdx);
         }
       }
 
