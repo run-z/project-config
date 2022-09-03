@@ -87,7 +87,7 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
   readonly #targetDir: string;
   readonly #cacheDir: string;
   #dirs: readonly string[];
-  #isSaved = true;
+  #isSaved = false;
 
   private constructor(
     project: ProjectConfig,
@@ -147,9 +147,9 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
    *
    * `true` initially.
    *
-   * Becomes `false` when output directories {@link ProjectOutput#clean deleted}.
+   * Becomes `false` when output directories {@link clean deleted}.
    *
-   * Becomes `true` again once configuration {@link ProjectOutput#save saved}.
+   * Becomes `true` again once configuration {@link save saved}.
    */
   get isSaved(): boolean {
     return this.#isSaved;
@@ -160,8 +160,16 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
    *
    * Creates {@link targetDir build target directory} and saves output configuration to `.project-output.json` file
    * within it.
+   *
+   * Does nothing if config {@link isSaved saved} already.
+   *
+   * @returns Promise resolved to `this` instance when config saved.
    */
-  async save(): Promise<void> {
+  async save(): Promise<this> {
+    if (this.isSaved) {
+      return this;
+    }
+
     await fs.mkdir(this.targetDir, { recursive: true });
 
     const output: ProjectOutputJson = {
@@ -176,12 +184,14 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
     ]);
 
     this.#isSaved = true;
+
+    return this;
   }
 
   /**
-   * Clears and deletes all {@link ProjectOutput#dirs output directories}.
+   * Clears and deletes all {@link dirs output directories}.
    *
-   * Project output configuration becomes {@link ProjectOutput#isSaved unsaved} after this operation.
+   * Project output configuration becomes {@link isSaved unsaved} after this operation.
    */
   async clean(): Promise<void> {
     await Promise.all(
@@ -198,14 +208,14 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
  */
 export interface ProjectOutputInit {
   /**
-   * Distributable files` directory relative to {@link rootDir project root}.
+   * Distributable files` directory relative to {@link ProjectConfig#rootDir project root}.
    *
    * @defaultValue `dist`
    */
   readonly distDir?: string | undefined;
 
   /**
-   * Directory containing build targets relative to {@link rootDir project root}.
+   * Directory containing build targets relative to {@link ProjectConfig#rootDir project root}.
    *
    * Unlike {@link distDir}, this one is not supposed to be published at NPM.
    *

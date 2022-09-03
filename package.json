@@ -1,6 +1,6 @@
 {
   "name": "@run-z/project-config",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Project configuration helper for @surol's projects",
   "homepage": "https://github.com/run-z/project-config",
   "repository": {
@@ -32,6 +32,9 @@
       "import": "./dist/project-config.rollup.js",
       "require": "./dist/project-config.rollup.cjs"
     }
+  },
+  "bin": {
+    "clean-z": "bin/clean-z.js"
   },
   "peerDependencies": {
     "@swc/core": "^1.2.246",
@@ -69,7 +72,7 @@
   },
   "devDependencies": {
     "@jest/types": "^29.0.1",
-    "@run-z/eslint-config": "^3.2.1",
+    "@run-z/eslint-config": "^3.2.2",
     "@run-z/prettier-config": "^2.0.0",
     "@swc/core": "^1.2.246",
     "@swc/jest": "^0.2.22",
