@@ -62,16 +62,10 @@ export class ProjectConfig {
    */
   get output(): Promise<ProjectOutput> {
     if (!this.#output) {
-      return (this.#output = ProjectOutput.create(this, this.#init));
+      this.#output = ProjectOutput.create(this, this.#init);
     }
 
-    return this.#output.then(layout => {
-      if (layout.isSaved) {
-        return layout;
-      }
-
-      return (this.#output = ProjectOutput.create(this, this.#init));
-    });
+    return this.#output;
   }
 
   /**

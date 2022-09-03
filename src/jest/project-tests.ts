@@ -93,8 +93,8 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
 
     if (config.preset == null) {
       if (swc) {
-        const { experimentalDecorators, emitDecoratorMetadata }
-          = this.#project.typescript.compilerOptions;
+        const { experimentalDecorators, emitDecoratorMetadata } =
+          this.#project.typescript.compilerOptions;
 
         config.transform['^.+\\.(t|j)sx?$'] = [
           '@swc/jest',

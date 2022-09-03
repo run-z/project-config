@@ -23,15 +23,15 @@ export class ProjectExport extends ProjectEntry {
     this: void,
     init: ProjectExportInit = {},
   ): Promise<ProjectExport | undefined> {
-    const { project = new ProjectConfig(), entryPoint = project.packageJson.entryPoints.get('.') }
-      = init;
+    const { project = new ProjectConfig(), entryPoint = project.packageJson.entryPoints.get('.') } =
+      init;
 
     if (!entryPoint) {
       return;
     }
 
-    const distFilePath
-      = entryPoint.withConditions('import') || entryPoint.withConditions('default');
+    const distFilePath =
+      entryPoint.withConditions('import') || entryPoint.withConditions('default');
 
     if (!distFilePath) {
       return;
