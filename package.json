@@ -1,6 +1,6 @@
 {
   "name": "@run-z/project-config",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Project configuration helper for @surol's projects",
   "homepage": "https://github.com/run-z/project-config",
   "repository": {
