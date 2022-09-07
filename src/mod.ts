@@ -1,7 +1,7 @@
 /**
- * @packageDocumentation
  * @module @run-z/project-config
  */
+export * from './gitignore/mod.js';
 export * from './package/mod.js';
 export * from './project-config.js';
 export * from './project-entry.js';
