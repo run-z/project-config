@@ -14,6 +14,7 @@ export class ProjectExport extends ProjectEntry {
   /**
    * Tries to create project entry.
    *
+   * @param project - Target project configuration.
    * @param init - Export initialization options.
    *
    * @returns Promise resolved either to project export instance, or to `undefined` if source file unspecified
@@ -21,10 +22,10 @@ export class ProjectExport extends ProjectEntry {
    */
   static async create(
     this: void,
+    project: ProjectConfig,
     init: ProjectExportInit = {},
   ): Promise<ProjectExport | undefined> {
-    const { project = new ProjectConfig(), entryPoint = project.packageJson.entryPoints.get('.') } =
-      init;
+    const { entryPoint = project.packageJson.entryPoints.get('.') } = init;
 
     if (!entryPoint) {
       return;
@@ -59,7 +60,7 @@ export class ProjectExport extends ProjectEntry {
    * @param init - Export initialization options.
    */
   protected constructor(
-    init: Omit<Required<ProjectExportInit>, 'project'> & {
+    init: Required<ProjectExportInit> & {
       readonly output: ProjectOutput;
       readonly distFile: string;
     },
@@ -120,13 +121,6 @@ export class ProjectExport extends ProjectEntry {
  * Project export initialization options.
  */
 export interface ProjectExportInit {
-  /**
-   * Target project configuration.
-   *
-   * New one will be constructed if omitted.
-   */
-  readonly project?: ProjectConfig | undefined;
-
   /**
    * Package entry point the project export represents.
    *

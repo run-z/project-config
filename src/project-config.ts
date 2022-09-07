@@ -126,7 +126,7 @@ export class ProjectConfig {
   async #loadExports(): Promise<ReadonlyMap<string, ProjectExport>> {
     const entries = await Promise.all(
       [...this.packageJson.entryPoints.values()].map(async entryPoint => {
-        const entry = await ProjectExport.create({ project: this, entryPoint });
+        const entry = await ProjectExport.create(this, { entryPoint });
 
         return entry ? ([entry.name, entry] as const) : undefined;
       }),
