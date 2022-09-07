@@ -60,13 +60,10 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
     const output = await this.project.output;
     const { targetDir, cacheDir } = output;
     const config: InitialOptionsTsJest &
-      Required<Pick<InitialOptionsTsJest, 'globals' | 'reporters' | 'transform'>> = {
+      Required<Pick<InitialOptionsTsJest, 'reporters' | 'transform'>> = {
       ...options,
       cacheDirectory: path.join(cacheDir, 'jest'),
       extensionsToTreatAsEsm: options.extensionsToTreatAsEsm ?? ['.ts'],
-      globals: {
-        ...(options.globals || { 'ts-jest': {} }),
-      },
       moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1',
         ...options.moduleNameMapper,
@@ -117,15 +114,18 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
         ];
       } else {
         config.preset = 'ts-jest/presets/default-esm';
-        config.globals['ts-jest'] = {
-          tsconfig: {
-            ...this.#project.typescript.compilerOptions,
-            esModuleInterop: true,
-            noUnusedLocals: false,
-            noUnusedParameters: false,
+        config.transform['^.+\\.tsx?$'] = [
+          'ts-jest',
+          {
+            tsconfig: {
+              ...this.#project.typescript.compilerOptions,
+              esModuleInterop: true,
+              noUnusedLocals: false,
+              noUnusedParameters: false,
+            },
+            useESM: true,
           },
-          useESM: true,
-        };
+        ];
       }
     }
     if (process.env.CI === 'true' && process.env.GITHUB_ACTION) {
