@@ -9,36 +9,26 @@ describe('GitIgnoreEntry', () => {
   });
 
   describe('ignore', () => {
-    it('ignores pattern', () => {
-      file.section('test').entry('pattern').ignore();
+    it('ignores files matching pattern', () => {
+      const entry = file.section('test').entry('pattern');
 
-      expect(file.section('test').entry('pattern').isIgnored).toBe(true);
+      entry.ignore();
+
+      expect(file.section('test').entry('pattern')).toBe(entry);
+      expect(entry.effect).toBe('ignore');
       expect(file.isModified).toBe(true);
       expect(file.toString()).toEqual(`# test
 pattern
 `);
     });
-    it('does not move pattern to another section', () => {
-      file.parse('!pattern').section('test').entry('pattern').ignore();
+    it('moves pattern to another section', () => {
+      const entry = file.parse('!pattern').section('test').entry('pattern');
 
-      expect(file.section('').entry('pattern').section.title).toBe('');
-      expect(file.isModified).toBe(true);
-      expect(file.toString()).toEqual(`pattern
+      entry.ignore();
 
-# test
-`);
-    });
-    it('moves pattern to another section after removal', () => {
-      file
-        .parse('!pattern')
-        .section('test')
-        .entry('pattern')
-        .remove()
-        .file.section('test')
-        .entry('pattern')
-        .ignore();
-
-      expect(file.section('').entry('pattern').section.title).toBe('test');
+      expect(file.section('test').entry('pattern')).toBe(entry);
+      expect(entry.effect).toBe('ignore');
+      expect(entry.section.title).toBe('test');
       expect(file.isModified).toBe(true);
       expect(file.toString()).toEqual(`# test
 pattern
@@ -46,37 +36,27 @@ pattern
     });
   });
 
-  describe('unIgnore', () => {
-    it('un-ignores pattern', () => {
-      file.section('test').entry('pattern').unIgnore();
+  describe('ignore(false)', () => {
+    it('re-includes files matching pattern', () => {
+      const entry = file.section('test').entry('pattern');
 
-      expect(file.section('test').entry('pattern').isIgnored).toBe(false);
+      entry.ignore(false);
+
+      expect(file.section('test').entry('pattern')).toBe(entry);
+      expect(entry.effect).toBe('include');
       expect(file.isModified).toBe(true);
       expect(file.toString()).toEqual(`# test
 !pattern
 `);
     });
-    it('does not move pattern to another section', () => {
-      file.parse('pattern').section('test').entry('pattern').unIgnore();
+    it('moves pattern to another section', () => {
+      const entry = file.parse('pattern').section('test').entry('pattern');
 
-      expect(file.section('').entry('pattern').section.title).toBe('');
-      expect(file.isModified).toBe(true);
-      expect(file.toString()).toEqual(`!pattern
+      entry.ignore(false);
 
-# test
-`);
-    });
-    it('moves pattern to another section after removal', () => {
-      file
-        .parse('pattern')
-        .section('test')
-        .entry('pattern')
-        .remove()
-        .file.section('test')
-        .entry('pattern')
-        .unIgnore();
-
-      expect(file.section('').entry('pattern').section.title).toBe('test');
+      expect(file.section('test').entry('pattern')).toBe(entry);
+      expect(entry.effect).toBe('include');
+      expect(entry.section.title).toBe('test');
       expect(file.isModified).toBe(true);
       expect(file.toString()).toEqual(`# test
 !pattern
@@ -86,11 +66,17 @@ pattern
 
   describe('remove', () => {
     it('removes entry from section', () => {
-      file.parse('pattern').section('test').entry('pattern').remove();
+      const entry = file.parse('pattern').section('').entry('pattern');
 
-      expect(file.section('').entry('pattern').isRemoved).toBe(true);
+      expect(entry.isDetached).toBe(false);
+
+      entry.remove();
+
+      expect(entry.isDetached).toBe(true);
+      expect(entry.currentSection).toBeUndefined();
+      expect(file.section('').entry('pattern').isDetached).toBe(true);
       expect([...file.section('').entries()]).toHaveLength(0);
-      expect(file.section('test').entry('pattern').isRemoved).toBe(true);
+      expect(file.section('test').entry('pattern').isDetached).toBe(true);
       expect([...file.section('test').entries()]).toHaveLength(0);
       expect(file.isModified).toBe(true);
       expect(file.section('').entry('pattern').section.title).toBe('');

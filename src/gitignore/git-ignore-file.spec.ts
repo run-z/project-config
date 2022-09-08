@@ -113,7 +113,7 @@ describe('GitIgnoreFile', () => {
       const file = new GitIgnoreFile().parse('\\#pattern');
 
       expect([...file.entries()]).toEqual([
-        expect.objectContaining({ pattern: '#pattern', isIgnored: true }),
+        expect.objectContaining({ pattern: '#pattern', effect: 'ignore' }),
       ]);
       expect(file.toString('\n')).toBe(`\\#pattern
 `);
@@ -132,11 +132,11 @@ describe('GitIgnoreFile', () => {
       expect(file.toString('\n')).toBe(`/pattern
 `);
     });
-    it('recognizes un-ignored pattern', () => {
+    it('recognizes re-including pattern', () => {
       const file = new GitIgnoreFile().parse('!pattern');
 
       expect([...file.entries()]).toEqual([
-        expect.objectContaining({ pattern: 'pattern', isIgnored: false }),
+        expect.objectContaining({ pattern: 'pattern', effect: 'include' }),
       ]);
       expect(file.toString('\n')).toBe(`!pattern
 `);

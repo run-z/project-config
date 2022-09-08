@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
+import { GitIgnoreEntryCtl } from './git-ignore-entry.impl.js';
 import { GitIgnoreEntry } from './git-ignore-entry.js';
 import { GitIgnoreFileCtl } from './git-ignore-file.impl.js';
 import { GitIgnoreSectionCtl } from './git-ignore-section.impl.js';
@@ -111,30 +112,19 @@ export class GitIgnoreFile {
         continue;
       }
 
-      if (line.startsWith('\\#')) {
-        // Pattern starting with `#` has to be escaped.
-        line = line.slice(1);
-      }
-      if (line.endsWith('\\')) {
-        line = line.slice(0, -1); // Spaces preceding the trailing `\` character should be preserved.
-      }
+      const entryCtl = GitIgnoreEntryCtl.parse(line);
 
       if (prevComment) {
         sectionCtl = this.#sectionCtl(prevComment);
         prevComment = null;
       } else if (!sectionCtl) {
-        if (!line) {
-          continue; // Empty before section start
+        if (!entryCtl) {
+          continue; // Empty line before section start
         }
         sectionCtl = this.#sectionCtl(''); // Default section.
       }
-      if (line) {
-        if (line.startsWith('!')) {
-          sectionCtl.add(line.slice(1), false);
-        } else {
-          sectionCtl.add(line, true);
-        }
-      }
+
+      entryCtl?.attachTo(sectionCtl);
     }
 
     if (prevComment != null) {

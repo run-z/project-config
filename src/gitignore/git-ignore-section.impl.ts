@@ -1,4 +1,4 @@
-import { GitIgnoreEntry$ } from './git-ignore-entry.impl.js';
+import { GitIgnoreEntryCtl } from './git-ignore-entry.impl.js';
 import { GitIgnoreEntry } from './git-ignore-entry.js';
 import { GitIgnoreFileCtl } from './git-ignore-file.impl.js';
 import { GitIgnoreSection } from './git-ignore-section.js';
@@ -17,9 +17,7 @@ class GitIgnoreSection$ extends GitIgnoreSection {
   }
 
   override entry(pattern: string): GitIgnoreEntry {
-    const sectionCtl = this.#ctl.fileCtl.sectionOfEntry(pattern) || this.#ctl;
-
-    return sectionCtl.entry(pattern);
+    return this.#ctl.entry(pattern);
   }
 
 }
@@ -29,7 +27,7 @@ class GitIgnoreSection$ extends GitIgnoreSection {
  */
 export class GitIgnoreSectionCtl {
 
-  readonly #entries = new Map<string, { isIgnored: boolean }>();
+  readonly #entries = new Map<string, GitIgnoreEntry>();
   readonly #fileCtl: GitIgnoreFileCtl;
   readonly #section: GitIgnoreSection$;
 
@@ -46,46 +44,31 @@ export class GitIgnoreSectionCtl {
     return this.#section;
   }
 
-  *entries(): IterableIterator<GitIgnoreEntry$> {
-    for (const pattern of this.#entries.keys()) {
-      if (this.#fileCtl.sectionOfEntry(pattern) !== this) {
-        this.#entries.delete(pattern);
+  *entries(): IterableIterator<GitIgnoreEntry> {
+    for (const entry of this.#entries.values()) {
+      if (entry.currentSection !== this.section) {
+        this.#entries.delete(entry.pattern);
       } else {
-        yield this.entry(pattern);
+        yield entry;
       }
     }
   }
 
-  entry(pattern: string): GitIgnoreEntry$ {
-    return new GitIgnoreEntry$(this, pattern);
+  entry(pattern: string): GitIgnoreEntry {
+    const entry = this.#entries.get(pattern);
+
+    return entry ?? new GitIgnoreEntryCtl(pattern).entryFor(this);
   }
 
-  isIgnored(entry: GitIgnoreEntry$): boolean {
-    return this.#entries.get(entry.pattern)?.isIgnored ?? false;
+  attachEntry(entry: GitIgnoreEntry, entryCtl: GitIgnoreEntryCtl): GitIgnoreEntryCtl {
+    this.#entries.set(entry.pattern, entry);
+
+    return this.#fileCtl.attachEntry(entryCtl);
   }
 
-  isRemoved(entry: GitIgnoreEntry$): boolean {
-    return !this.#entries.has(entry.pattern);
-  }
-
-  add(pattern: string, isIgnored: boolean): void {
-    this.#entries.set(pattern, { isIgnored });
-    this.#fileCtl.addEntryToSection(pattern, this);
-  }
-
-  ignore(entry: GitIgnoreEntry$): void {
-    this.#entries.set(entry.pattern, { isIgnored: true });
-    this.#fileCtl.addEntryToSection(entry.pattern, this);
-  }
-
-  unIgnore(entry: GitIgnoreEntry$): void {
-    this.#entries.set(entry.pattern, { isIgnored: false });
-    this.#fileCtl.addEntryToSection(entry.pattern, this);
-  }
-
-  remove(entry: GitIgnoreEntry$): void {
-    this.#entries.delete(entry.pattern);
-    this.#fileCtl.removeEntryFromSection(entry.pattern, this);
+  removeEntry(entryCtl: GitIgnoreEntryCtl): void {
+    this.#entries.delete(entryCtl.pattern);
+    this.#fileCtl.removeEntry(entryCtl);
   }
 
 }

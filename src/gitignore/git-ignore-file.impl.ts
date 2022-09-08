@@ -1,5 +1,5 @@
+import { GitIgnoreEntryCtl } from './git-ignore-entry.impl.js';
 import { GitIgnoreFile } from './git-ignore-file.js';
-import { GitIgnoreSectionCtl } from './git-ignore-section.impl.js';
 
 /**
  * @internal
@@ -7,7 +7,7 @@ import { GitIgnoreSectionCtl } from './git-ignore-section.impl.js';
 export class GitIgnoreFileCtl {
 
   readonly #file: GitIgnoreFile;
-  readonly #entrySections = new Map<string, GitIgnoreSectionCtl>();
+  readonly #entryCtls = new Map<string, GitIgnoreEntryCtl>();
   #isModified = false;
 
   constructor(file: GitIgnoreFile) {
@@ -22,18 +22,32 @@ export class GitIgnoreFileCtl {
     return this.#isModified;
   }
 
-  sectionOfEntry(pattern: string): GitIgnoreSectionCtl | undefined {
-    return this.#entrySections.get(pattern);
+  entryCtl(pattern: string): GitIgnoreEntryCtl | undefined {
+    return this.#entryCtls.get(pattern);
   }
 
-  addEntryToSection(pattern: string, sectionCtl: GitIgnoreSectionCtl): void {
-    this.#entrySections.set(pattern, sectionCtl);
+  attachEntry(entryCtl: GitIgnoreEntryCtl): GitIgnoreEntryCtl {
+    const { pattern } = entryCtl;
+    const existingCtl = this.#entryCtls.get(pattern);
+
+    if (existingCtl) {
+      if (existingCtl.updateBy(entryCtl)) {
+        this.modify();
+      } else {
+        console.debug('!!!');
+      }
+
+      return existingCtl;
+    }
+
+    this.#entryCtls.set(pattern, entryCtl);
     this.modify();
+
+    return entryCtl;
   }
 
-  removeEntryFromSection(pattern: string, sectionCtl: GitIgnoreSectionCtl): void {
-    if (this.#entrySections.get(pattern) === sectionCtl) {
-      this.#entrySections.delete(pattern);
+  removeEntry(entryCtl: GitIgnoreEntryCtl): void {
+    if (this.#entryCtls.delete(entryCtl.pattern)) {
       this.modify();
     }
   }
