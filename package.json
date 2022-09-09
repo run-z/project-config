@@ -96,10 +96,10 @@
     "typescript": "^4.8.2"
   },
   "scripts": {
-    "all": "run-z build,lint",
+    "all": "run-z build,lint,test",
     "bootstrap": "rollup -c",
     "build": "run-z +z bootstrap",
-    "ci:all": "run-z all",
+    "ci:all": "run-z all +test/--ci/--runInBand",
     "clean": "run-z",
     "cln": "run-z +z --then shx rm -rf dist target",
     "doc": "run-z +z --then typedoc",
