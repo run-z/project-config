@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
-import { GitIgnoreEntryCtl } from './git-ignore-entry.impl.js';
+import { GitIgnoreEntryCtl, gitIgnorePattern } from './git-ignore-entry.impl.js';
 import { GitIgnoreEntry } from './git-ignore-entry.js';
 import { GitIgnoreFileCtl } from './git-ignore-file.impl.js';
 import { GitIgnoreSectionCtl } from './git-ignore-section.impl.js';
@@ -72,14 +72,16 @@ export class GitIgnoreFile {
    *
    * @returns File entry.
    */
-  entry(pattern: string): GitIgnoreEntry {
+  entry(pattern: string): GitIgnoreEntry;
+  entry(rawPattern: string): GitIgnoreEntry {
+    const { pattern } = gitIgnorePattern(rawPattern);
     const entryCtl = this.#ctl.entryCtl(pattern);
 
     if (entryCtl && entryCtl.attachedTo) {
-      return entryCtl.attachedTo.entry(pattern, entryCtl);
+      return entryCtl.attachedTo.entry(rawPattern, entryCtl);
     }
 
-    return this.section('').entry(pattern);
+    return this.section('').entry(rawPattern);
   }
 
   #sectionCtl(title: string): GitIgnoreSectionCtl {

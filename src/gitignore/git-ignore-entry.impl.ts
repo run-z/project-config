@@ -29,6 +29,12 @@ class GitIgnoreEntry$ extends GitIgnoreEntry {
     return this.#ctl.effect ?? this.#currentCtl?.effect ?? 'ignore';
   }
 
+  override setEffect(effect: GitIgnoreEntry.Effect): this {
+    this.#ctl.setEffect(this.#sectionCtl, effect);
+
+    return this;
+  }
+
   override get match(): GitIgnoreEntry.Match {
     return this.#ctl.match ?? this.#currentCtl?.match ?? 'all';
   }
@@ -39,10 +45,8 @@ class GitIgnoreEntry$ extends GitIgnoreEntry {
     return this;
   }
 
-  override ignore(ignore = true): GitIgnoreSection {
-    this.#ctl = this.#ctl
-      .setEffect(this.#sectionCtl, ignore ? 'ignore' : 'include')
-      .attachTo(this.#sectionCtl, this);
+  override attach(): GitIgnoreSection {
+    this.#ctl = this.#ctl.attachTo(this.#sectionCtl, this);
 
     return this.section;
   }
@@ -57,6 +61,44 @@ class GitIgnoreEntry$ extends GitIgnoreEntry {
     return this.#sectionCtl.fileCtl.entryCtl(this.pattern);
   }
 
+}
+
+/**
+ * @internal
+ */
+export function gitIgnorePattern(rawPattern: string): {
+  readonly pattern: string;
+  readonly match: GitIgnoreEntry.Match | undefined;
+  readonly effect: GitIgnoreEntry.Effect | undefined;
+  update: (this: void, entry: GitIgnoreEntry) => GitIgnoreEntry;
+} {
+  let effect: GitIgnoreEntry.Effect | undefined;
+  let match: GitIgnoreEntry.Match | undefined;
+
+  if (rawPattern.startsWith('!')) {
+    rawPattern = rawPattern.slice(1);
+    effect = 'include';
+  }
+  if (rawPattern.endsWith('/')) {
+    rawPattern = rawPattern.slice(0, -1);
+    match = 'dirs';
+  }
+
+  return {
+    pattern: rawPattern,
+    match,
+    effect,
+    update(entry) {
+      if (match) {
+        entry.setMatch(match);
+      }
+      if (effect) {
+        entry.setEffect(effect);
+      }
+
+      return entry;
+    },
+  };
 }
 
 /**
@@ -77,23 +119,9 @@ export class GitIgnoreEntryCtl {
       return;
     }
 
-    let effect: GitIgnoreEntry.Effect;
-    let match: GitIgnoreEntry.Match;
+    const { pattern, match = 'all', effect = 'ignore' } = gitIgnorePattern(line);
 
-    if (line.startsWith('!')) {
-      line = line.slice(1);
-      effect = 'include';
-    } else {
-      effect = 'ignore';
-    }
-    if (line.endsWith('/')) {
-      line = line.slice(0, -1);
-      match = 'dirs';
-    } else {
-      match = 'all';
-    }
-
-    return new GitIgnoreEntryCtl(line, match, effect);
+    return new GitIgnoreEntryCtl(pattern, match, effect);
   }
 
   readonly #pattern: string;

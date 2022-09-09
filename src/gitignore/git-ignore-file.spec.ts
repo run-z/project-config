@@ -161,7 +161,32 @@ describe('GitIgnoreFile', () => {
 
       expect(entry.isDetached).toBe(true);
       expect(entry.pattern).toBe('pattern');
+      expect(entry.effect).toBe('ignore');
+      expect(entry.match).toBe('all');
       expect(entry.section.title).toBe('');
+      expect(file.isModified).toBe(false);
+    });
+    it('create detached entry matching only directories', () => {
+      const file = new GitIgnoreFile();
+      const entry = file.entry('pattern/');
+
+      expect(entry.isDetached).toBe(true);
+      expect(entry.pattern).toBe('pattern');
+      expect(entry.effect).toBe('ignore');
+      expect(entry.match).toBe('dirs');
+      expect(entry.section.title).toBe('');
+      expect(file.isModified).toBe(false);
+    });
+    it('create detached re-including entry', () => {
+      const file = new GitIgnoreFile();
+      const entry = file.entry('!pattern');
+
+      expect(entry.isDetached).toBe(true);
+      expect(entry.pattern).toBe('pattern');
+      expect(entry.effect).toBe('include');
+      expect(entry.match).toBe('all');
+      expect(entry.section.title).toBe('');
+      expect(file.isModified).toBe(false);
     });
     it('obtains attached entry', () => {
       const file = new GitIgnoreFile().parse(`
@@ -172,8 +197,38 @@ pattern/
 
       expect(entry.isDetached).toBe(false);
       expect(entry.pattern).toBe('pattern');
+      expect(entry.effect).toBe('ignore');
       expect(entry.match).toBe('dirs');
       expect(entry.section.title).toBe('test');
+      expect(file.isModified).toBe(false);
+    });
+    it('updates match of attached entry', () => {
+      const file = new GitIgnoreFile().parse(`
+# test
+pattern
+`);
+      const entry = file.entry('pattern/');
+
+      expect(entry.isDetached).toBe(false);
+      expect(entry.pattern).toBe('pattern');
+      expect(entry.effect).toBe('ignore');
+      expect(entry.match).toBe('dirs');
+      expect(entry.section.title).toBe('test');
+      expect(file.isModified).toBe(true);
+    });
+    it('updates effect of attached entry', () => {
+      const file = new GitIgnoreFile().parse(`
+# test
+pattern/
+`);
+      const entry = file.entry('!pattern');
+
+      expect(entry.isDetached).toBe(false);
+      expect(entry.pattern).toBe('pattern');
+      expect(entry.effect).toBe('include');
+      expect(entry.match).toBe('dirs');
+      expect(entry.section.title).toBe('test');
+      expect(file.isModified).toBe(true);
     });
   });
 
