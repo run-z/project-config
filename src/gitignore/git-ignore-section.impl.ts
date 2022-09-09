@@ -1,4 +1,4 @@
-import { GitIgnoreEntryCtl } from './git-ignore-entry.impl.js';
+import { GitIgnoreEntryCtl, gitIgnorePattern } from './git-ignore-entry.impl.js';
 import { GitIgnoreEntry } from './git-ignore-entry.js';
 import { GitIgnoreFileCtl } from './git-ignore-file.impl.js';
 import { GitIgnoreSection } from './git-ignore-section.js';
@@ -54,14 +54,15 @@ export class GitIgnoreSectionCtl {
     }
   }
 
-  entry(pattern: string, ctl?: GitIgnoreEntryCtl): GitIgnoreEntry {
+  entry(rawPattern: string, ctl?: GitIgnoreEntryCtl): GitIgnoreEntry {
+    const { pattern, update } = gitIgnorePattern(rawPattern);
     const entry = this.#entries.get(pattern);
 
     if (entry) {
-      return entry;
+      return update(entry);
     }
 
-    return (ctl || new GitIgnoreEntryCtl(pattern)).entryFor(this);
+    return update((ctl || new GitIgnoreEntryCtl(pattern)).entryFor(this));
   }
 
   attachEntry(entry: GitIgnoreEntry, entryCtl: GitIgnoreEntryCtl): GitIgnoreEntryCtl {

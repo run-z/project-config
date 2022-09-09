@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
-import path from 'node:path';
 import os from 'node:os';
+import path from 'node:path';
+import { GitIgnoreFile, gitIgnorePath } from './gitignore/mod.js';
 import { ProjectConfig } from './project-config.js';
 
 /**
@@ -58,6 +59,12 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
       distDir,
       targetDir,
       cacheDir,
+      gitignore: await ProjectOutput.#loadGitignore(project, { ...init, distDir, targetDir }),
+      npmignore: await ProjectOutput.#loadNpmignore(project, {
+        ...init,
+        distDir,
+        targetDir,
+      }),
       dirs,
     });
 
@@ -82,10 +89,150 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
     return;
   }
 
+  static async #loadGitignore(
+    project: ProjectConfig,
+    {
+      distDir,
+      targetDir,
+      gitignore = true,
+    }: Required<Pick<ProjectOutputInit, 'distDir' | 'targetDir'>> &
+      Pick<ProjectOutputInit, 'gitignore'>,
+  ): Promise<GitIgnoreFile | false> {
+    if (gitignore !== true) {
+      return gitignore;
+    }
+
+    const { rootDir } = project;
+    const filePath = path.join(rootDir, '.gitignore');
+    const file = new GitIgnoreFile();
+
+    try {
+      await file.load(filePath);
+    } catch {
+      // No `.gitignore` file exists yet.
+    }
+
+    file
+      .section('Node.js modules')
+      .entry('node_modules/')
+      .ignore()
+      .file.section('IntelliJ IDEA files')
+      .entry('.idea')
+      .ignore()
+      .entry('*.iml')
+      .ignore()
+      .file.section('Logs')
+      .entry('*.log')
+      .ignore()
+      .file.section('Ignore lock files as this project developed within (private) pnpm worktree')
+      .entry('yarn.lock')
+      .ignore()
+      .entry('package-lock.json')
+      .ignore()
+      .entry('pnpm-lock.yaml')
+      .ignore()
+      .file.section('Package archive')
+      .entry('*.tgz')
+      .ignore()
+      .file.section('Intermediate files')
+      .entry(gitIgnorePath(rootDir, targetDir))
+      .setMatch('dirs')
+      .ignore()
+      .file.section('Distribution directory')
+      .entry(gitIgnorePath(rootDir, distDir))
+      .setMatch('dirs')
+      .ignore()
+      .file.section('Type definitions')
+      .entry('*.d.ts')
+      .ignore()
+      .entry('*.d.ts.map')
+      .ignore();
+
+    return await file.save(filePath);
+  }
+
+  static async #loadNpmignore(
+    project: ProjectConfig,
+    {
+      distDir,
+      targetDir,
+      npmignore = true,
+    }: Required<Pick<ProjectOutputInit, 'distDir' | 'targetDir'>> &
+      Pick<ProjectOutputInit, 'npmignore'>,
+  ): Promise<GitIgnoreFile | false> {
+    if (!npmignore) {
+      return npmignore;
+    }
+
+    const { rootDir, sourceDir } = project;
+    const filePath = path.join(rootDir, '.npmignore');
+    const file = new GitIgnoreFile();
+
+    try {
+      await file.load(filePath);
+    } catch {
+      // No `.npmignore` file exists yet.
+    }
+
+    file
+      .section('Node.js modules')
+      .entry('node_modules/')
+      .ignore()
+      .file.section('IntelliJ IDEA files')
+      .entry('.idea')
+      .ignore()
+      .entry('*.iml')
+      .ignore()
+      .file.section('Logs')
+      .entry('*.log')
+      .ignore()
+      .file.section('Package archive')
+      .entry('*.tgz')
+      .ignore()
+      .file.section('Source files')
+      .entry(gitIgnorePath(rootDir, sourceDir))
+      .setMatch('dirs')
+      .file.section('Intermediate files')
+      .entry(gitIgnorePath(rootDir, targetDir))
+      .setMatch('dirs')
+      .ignore()
+      .file.section('Build configurations')
+      .entry('/.*')
+      .ignore()
+      .entry('/*.cjs')
+      .ignore()
+      .entry('/*.js')
+      .ignore()
+      .entry('/.json')
+      .ignore()
+      .entry('/*.mjs')
+      .ignore()
+      .file.section('Package lock')
+      .entry('yarn.lock')
+      .ignore()
+      .entry('package-lock.json')
+      .ignore()
+      .entry('pnpm-lock.yaml')
+      .ignore()
+      .file.section('Include distribution dir')
+      .entry(gitIgnorePath(rootDir, distDir))
+      .setMatch('dirs')
+      .ignore(false)
+      .file.section('Include type definitions')
+      .entry('*.d.ts')
+      .ignore(false)
+      .entry('*.d.ts.map')
+      .ignore(false);
+
+    return file.save(filePath);
+  }
+
   readonly #project: ProjectConfig;
   readonly #distDir: string;
   readonly #targetDir: string;
   readonly #cacheDir: string;
+  readonly #gitignore: GitIgnoreFile | false;
+  readonly #npmignore: GitIgnoreFile | false;
   #dirs: readonly string[];
   #isSaved = false;
 
@@ -95,13 +242,21 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
       distDir,
       targetDir,
       cacheDir,
+      gitignore,
+      npmignore,
       dirs,
-    }: Required<ProjectOutputInit> & { dirs: readonly string[] },
+    }: Required<Omit<ProjectOutputInit, 'gitignore' | 'npmignore'>> & {
+      dirs: readonly string[];
+      gitignore: GitIgnoreFile | false;
+      npmignore: GitIgnoreFile | false;
+    },
   ) {
     this.#project = project;
     this.#distDir = distDir;
     this.#targetDir = targetDir;
     this.#cacheDir = cacheDir;
+    this.#gitignore = gitignore;
+    this.#npmignore = npmignore;
     this.#dirs = dirs;
   }
 
@@ -140,6 +295,20 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
    */
   get dirs(): readonly string[] {
     return this.#dirs;
+  }
+
+  /**
+   * `.gitignore` file representation, or `false` if the file is not managed
+   */
+  get gitignore(): GitIgnoreFile | false {
+    return this.#gitignore;
+  }
+
+  /**
+   * `.npmignore` file representation, or `false` if the file is not managed
+   */
+  get npmignore(): GitIgnoreFile | false {
+    return this.#npmignore;
   }
 
   /**
@@ -229,8 +398,26 @@ export interface ProjectOutputInit {
    * @defaultValue Temporary directory.
    */
   readonly cacheDir?: string | undefined;
+
+  /**
+   * How to manage `.gitignore` file.
+   *
+   * Either a flag, or custom {@link GitIgnoreFile} instance.
+   *
+   * @defaultValue `true`.
+   */
+  readonly gitignore?: boolean | GitIgnoreFile | undefined;
+
+  /**
+   * How to manage `.npmignore` file.
+   *
+   * Either a flag, or custom {@link GitIgnoreFile} instance.
+   *
+   * @defaultValue `true`.
+   */
+  readonly npmignore?: boolean | GitIgnoreFile | undefined;
 }
 
-interface ProjectOutputJson extends Required<Omit<ProjectOutputInit, 'targetDir'>> {
+interface ProjectOutputJson extends Required<Pick<ProjectOutputInit, 'distDir' | 'cacheDir'>> {
   readonly dirs: readonly string[];
 }

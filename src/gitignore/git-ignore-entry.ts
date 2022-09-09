@@ -66,6 +66,20 @@ export abstract class GitIgnoreEntry {
   abstract get effect(): GitIgnoreEntry.Effect;
 
   /**
+   * Overrides the {@link effect} of this entry.
+   *
+   * If this entry {@link isDetached attached} to the {@link section}, then {@link GitIgnoreFile#isModified modifies}
+   * the file immediately. Otherwise, the file will be modified only after the entry {@link ignore attachment}.
+   *
+   * Note that this will be overridden by {@link ignore} method call. USe {@link attach} one to preserve it.
+   *
+   * @param effect - New effect of the pattern.
+   *
+   * @returns `this` instance.
+   */
+  abstract setEffect(effect: GitIgnoreEntry.Effect): this;
+
+  /**
    * What this entry matches.
    *
    * I.e. either only directories or both files and directories.
@@ -91,7 +105,20 @@ export abstract class GitIgnoreEntry {
    *
    * @returns Parent section.
    */
-  abstract ignore(ignore?: boolean): GitIgnoreSection;
+  ignore(ignore = true): GitIgnoreSection {
+    this.setEffect(ignore ? 'ignore' : 'include');
+
+    return this.attach();
+  }
+
+  /**
+   * Attaches this entry to the file.
+   *
+   * In contrast to {@link ignore}, this method does not alter the {@link effect} of this entry.
+   *
+   * @returns Parent section.
+   */
+  abstract attach(): GitIgnoreSection;
 
   /**
    * Removes the {@link pattern} from the file.
