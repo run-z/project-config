@@ -63,6 +63,25 @@ export class GitIgnoreFile {
     }
   }
 
+  /**
+   * Finds existing `.gitignore` file entry or creates new one.
+   *
+   * First, finds an entry attached to any section. If no such entry found, then creates new one in default section.
+   *
+   * @param pattern - Entry pattern.
+   *
+   * @returns File entry.
+   */
+  entry(pattern: string): GitIgnoreEntry {
+    const entryCtl = this.#ctl.entryCtl(pattern);
+
+    if (entryCtl && entryCtl.attachedTo) {
+      return entryCtl.attachedTo.entry(pattern, entryCtl);
+    }
+
+    return this.section('').entry(pattern);
+  }
+
   #sectionCtl(title: string): GitIgnoreSectionCtl {
     let sectionCtl = this.#sectionCtls.get(title);
 

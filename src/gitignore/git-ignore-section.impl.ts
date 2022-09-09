@@ -54,10 +54,14 @@ export class GitIgnoreSectionCtl {
     }
   }
 
-  entry(pattern: string): GitIgnoreEntry {
+  entry(pattern: string, ctl?: GitIgnoreEntryCtl): GitIgnoreEntry {
     const entry = this.#entries.get(pattern);
 
-    return entry ?? new GitIgnoreEntryCtl(pattern).entryFor(this);
+    if (entry) {
+      return entry;
+    }
+
+    return (ctl || new GitIgnoreEntryCtl(pattern)).entryFor(this);
   }
 
   attachEntry(entry: GitIgnoreEntry, entryCtl: GitIgnoreEntryCtl): GitIgnoreEntryCtl {

@@ -48,9 +48,14 @@ export abstract class GitIgnoreSection {
   abstract entries(): IterableIterator<GitIgnoreEntry>;
 
   /**
-   * Creates `.gitignore` file entry in this section.
+   * Finds existing `.gitignore` file entry or creates new one.
    *
-   * If entry already exists in another section, then returns that entry.
+   * If entry already attached to another section, then the returned entry would reflect existing one, while its
+   * {@link GitIgnoreEntry#currentSection current section} would point to enother section. The returned entry will be
+   * {@link GitIgnoreEntry#isDetached detached} in this case.
+   *
+   * The {@link GitIgnoreEntry#section section} of returned entry always returns to `this` section. The returned entry
+   * will be {@link GitIgnoreEntry#isDetached detached}, unless it already attached to this section.
    *
    * @param pattern - Entry pattern.
    *

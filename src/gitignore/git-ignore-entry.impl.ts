@@ -22,25 +22,33 @@ class GitIgnoreEntry$ extends GitIgnoreEntry {
   }
 
   override get isDetached(): boolean {
-    return !this.#ctl.attachedTo;
+    return this.#ctl.attachedTo !== this.#sectionCtl;
   }
 
   override get effect(): GitIgnoreEntry.Effect {
     return this.#ctl.effect ?? this.#currentCtl?.effect ?? 'ignore';
   }
 
-  override get target(): GitIgnoreEntry.Target {
-    return this.#ctl.target ?? this.#currentCtl?.target ?? 'all';
+  override get match(): GitIgnoreEntry.Match {
+    return this.#ctl.match ?? this.#currentCtl?.match ?? 'all';
+  }
+
+  override setMatch(match: GitIgnoreEntry.Match): this {
+    this.#ctl.setMatch(this.#sectionCtl, match);
+
+    return this;
   }
 
   override ignore(ignore = true): GitIgnoreSection {
-    this.#ctl = this.#ctl.setEffect(ignore ? 'ignore' : 'include').attachTo(this.#sectionCtl, this);
+    this.#ctl = this.#ctl
+      .setEffect(this.#sectionCtl, ignore ? 'ignore' : 'include')
+      .attachTo(this.#sectionCtl, this);
 
     return this.section;
   }
 
   override remove(): GitIgnoreSection {
-    this.#ctl.remove();
+    this.#ctl.remove(this.#sectionCtl);
 
     return this.section;
   }
@@ -70,7 +78,7 @@ export class GitIgnoreEntryCtl {
     }
 
     let effect: GitIgnoreEntry.Effect;
-    let target: GitIgnoreEntry.Target;
+    let match: GitIgnoreEntry.Match;
 
     if (line.startsWith('!')) {
       line = line.slice(1);
@@ -80,21 +88,23 @@ export class GitIgnoreEntryCtl {
     }
     if (line.endsWith('/')) {
       line = line.slice(0, -1);
-      target = 'dir';
+      match = 'dirs';
     } else {
-      target = 'all';
+      match = 'all';
     }
 
-    return new GitIgnoreEntryCtl(line).setEffect(effect).setTarget(target);
+    return new GitIgnoreEntryCtl(line, match, effect);
   }
 
   readonly #pattern: string;
+  #match?: GitIgnoreEntry.Match;
   #effect?: GitIgnoreEntry.Effect;
-  #target?: GitIgnoreEntry.Target;
   #attachedTo?: GitIgnoreSectionCtl;
 
-  constructor(pattern: string) {
+  constructor(pattern: string, match?: GitIgnoreEntry.Match, effect?: GitIgnoreEntry.Effect) {
     this.#pattern = pattern;
+    this.#match = match;
+    this.#effect = effect;
   }
 
   entryFor(sectionCtl: GitIgnoreSectionCtl): GitIgnoreEntry {
@@ -109,23 +119,23 @@ export class GitIgnoreEntryCtl {
     return this.#effect;
   }
 
-  setEffect(effect: GitIgnoreEntry.Effect): this {
+  setEffect(sectionCtl: GitIgnoreSectionCtl, effect: GitIgnoreEntry.Effect): this {
     if (this.#effect !== effect) {
       this.#effect = effect;
-      this.#modify();
+      this.#modify(sectionCtl);
     }
 
     return this;
   }
 
-  get target(): GitIgnoreEntry.Target | undefined {
-    return this.#target;
+  get match(): GitIgnoreEntry.Match | undefined {
+    return this.#match;
   }
 
-  setTarget(target: GitIgnoreEntry.Target): this {
-    if (this.#target !== target) {
-      this.#target = target;
-      this.#modify();
+  setMatch(sectionCtl: GitIgnoreSectionCtl, match: GitIgnoreEntry.Match): this {
+    if (this.#match !== match) {
+      this.#match = match;
+      this.#modify(sectionCtl);
     }
 
     return this;
@@ -148,8 +158,8 @@ export class GitIgnoreEntryCtl {
     return sectionCtl.attachEntry(entry, this);
   }
 
-  remove(): void {
-    if (this.#attachedTo) {
+  remove(sectionCtl: GitIgnoreSectionCtl): void {
+    if (this.#attachedTo === sectionCtl) {
       this.#attachedTo.removeEntry(this);
       this.#attachedTo = undefined;
     }
@@ -166,16 +176,18 @@ export class GitIgnoreEntryCtl {
       this.#effect = other.#effect;
       modified = true;
     }
-    if (other.#target && other.#target !== this.#target) {
-      this.#target = other.#target;
+    if (other.#match && other.#match !== this.#match) {
+      this.#match = other.#match;
       modified = true;
     }
 
     return modified;
   }
 
-  #modify(): void {
-    this.#attachedTo?.fileCtl.modify();
+  #modify(sectionCtl: GitIgnoreSectionCtl): void {
+    if (this.#attachedTo === sectionCtl) {
+      sectionCtl.fileCtl.modify();
+    }
   }
 
 }

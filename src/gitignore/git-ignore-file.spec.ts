@@ -108,6 +108,17 @@ describe('GitIgnoreFile', () => {
     });
   });
 
+  describe('section', () => {
+    it('caches section', () => {
+      const file = new GitIgnoreFile();
+      const section = file.section('test');
+
+      expect(section.title).toBe('test');
+      expect(section.file).toBe(file);
+      expect(file.section('test')).toBe(section);
+    });
+  });
+
   describe('entries', () => {
     it('recognizes escaped `#`', () => {
       const file = new GitIgnoreFile().parse('\\#pattern');
@@ -140,6 +151,29 @@ describe('GitIgnoreFile', () => {
       ]);
       expect(file.toString('\n')).toBe(`!pattern
 `);
+    });
+  });
+
+  describe('entry', () => {
+    it('creates detached entry in default section', () => {
+      const file = new GitIgnoreFile();
+      const entry = file.entry('pattern');
+
+      expect(entry.isDetached).toBe(true);
+      expect(entry.pattern).toBe('pattern');
+      expect(entry.section.title).toBe('');
+    });
+    it('obtains attached entry', () => {
+      const file = new GitIgnoreFile().parse(`
+# test
+pattern/
+`);
+      const entry = file.entry('pattern');
+
+      expect(entry.isDetached).toBe(false);
+      expect(entry.pattern).toBe('pattern');
+      expect(entry.match).toBe('dirs');
+      expect(entry.section.title).toBe('test');
     });
   });
 

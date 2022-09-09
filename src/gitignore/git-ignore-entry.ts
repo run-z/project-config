@@ -18,7 +18,7 @@ export abstract class GitIgnoreEntry {
   /**
    * Constructs `.gitignore` file entry.
    *
-   * @param pattern - Pattern string without `!` prefix.
+   * @param pattern - Pattern string without `!` prefix and `/` suffix.
    */
   constructor(pattern: string) {
     this.#pattern = pattern;
@@ -42,7 +42,7 @@ export abstract class GitIgnoreEntry {
   abstract get currentSection(): GitIgnoreSection | undefined;
 
   /**
-   * Pattern string without `!` prefix.
+   * Pattern string without `!` prefix and `/` suffix.
    */
   get pattern(): string {
     return this.#pattern;
@@ -66,11 +66,23 @@ export abstract class GitIgnoreEntry {
   abstract get effect(): GitIgnoreEntry.Effect;
 
   /**
-   * What targets matches this entry.
+   * What this entry matches.
    *
    * I.e. either only directories or both files and directories.
    */
-  abstract get target(): GitIgnoreEntry.Target;
+  abstract get match(): GitIgnoreEntry.Match;
+
+  /**
+   * Overrides the pattern {@link match}.
+   *
+   * If this entry {@link isDetached attached} to the {@link section}, then {@link GitIgnoreFile#isModified modifies}
+   * the file immediately. Otherwise, the file will be modified only after the entry {@link ignore attachment}.
+   *
+   * @param match - New match of the pattern.
+   *
+   * @returns `this` instance.
+   */
+  abstract setMatch(match: GitIgnoreEntry.Match): this;
 
   /**
    * Ignores files matching the {@link pattern} or re-includes them.
@@ -109,7 +121,7 @@ export abstract class GitIgnoreEntry {
       }
       out += pattern;
     }
-    if (this.target === 'dir') {
+    if (this.match === 'dirs') {
       out += '/';
     } else if (pattern.trimEnd() !== pattern) {
       out += '\\'; // Trailing whitespace has to be ended with `\`.
@@ -132,12 +144,12 @@ export namespace GitIgnoreEntry {
   export type Effect = 'ignore' | 'include';
 
   /**
-   * What targets matches the `.gitignore` pattern.
+   * What matches the `.gitignore` pattern.
    *
    * One of:
    *
    * - `all` - The pattern matches both files and directories.
-   * - `dir` - The pattern matches only directories. This corresponds to patterns with trailing `/`.
+   * - `dirs` - The pattern matches only directories. This corresponds to patterns with trailing `/`.
    */
-  export type Target = 'all' | 'dir';
+  export type Match = 'all' | 'dirs';
 }

@@ -33,8 +33,6 @@ export class GitIgnoreFileCtl {
     if (existingCtl) {
       if (existingCtl.updateBy(entryCtl)) {
         this.modify();
-      } else {
-        console.debug('!!!');
       }
 
       return existingCtl;
