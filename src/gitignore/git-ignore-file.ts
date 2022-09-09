@@ -24,7 +24,7 @@ export class GitIgnoreFile {
   }
 
   /**
-   * Whether the file has been {@link modify modified}.
+   * Whether the file has been modified.
    */
   get isModified(): boolean {
     return this.#ctl.isModified;

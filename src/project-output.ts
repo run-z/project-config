@@ -203,7 +203,7 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
       .ignore()
       .entry('/*.js')
       .ignore()
-      .entry('/.json')
+      .entry('/*.json')
       .ignore()
       .entry('/*.mjs')
       .ignore()
