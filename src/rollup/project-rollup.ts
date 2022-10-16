@@ -2,7 +2,6 @@ import module from 'node:module';
 import path from 'node:path';
 import { RollupOptions } from 'rollup';
 import flatDts from 'rollup-plugin-flat-dts';
-import sourcemaps from 'rollup-plugin-sourcemaps';
 import ts from 'rollup-plugin-typescript2';
 import typescript from 'typescript';
 import { ProjectConfig } from '../project-config.js';
@@ -71,7 +70,6 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
           tsconfigOverride: compilerOptions,
           cacheRoot: path.join(cacheDir, 'rts2'),
         }),
-        sourcemaps(),
       ],
       external: this.#externalModules(),
       output: {
