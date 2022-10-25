@@ -13,33 +13,29 @@
     "url": "https://github.com/run-z/project-config/issues"
   },
   "type": "module",
-  "main": "./dist/project-config.cjs",
   "module": "./dist/project-config.js",
   "types": "./dist/project-config.d.ts",
   "exports": {
     ".": {
       "types": "./dist/project-config.d.ts",
-      "import": "./dist/project-config.js",
-      "require": "./dist/project-config.cjs"
+      "import": "./dist/project-config.js"
     },
     "./jest": {
       "types": "./dist/project-config.jest.d.ts",
-      "import": "./dist/project-config.jest.js",
-      "require": "./dist/project-config.jest.cjs"
+      "import": "./dist/project-config.jest.js"
     },
     "./rollup": {
       "types": "./dist/project-config.rollup.d.ts",
-      "import": "./dist/project-config.rollup.js",
-      "require": "./dist/project-config.rollup.cjs"
+      "import": "./dist/project-config.rollup.js"
     }
   },
   "bin": {
     "clean-z": "bin/clean-z.js"
   },
   "peerDependencies": {
-    "@swc/core": "^1.3.9",
+    "@swc/core": "^1.3.10",
     "@swc/jest": "^0.2.23",
-    "jest": "^29.2.1",
+    "jest": "^29.2.2",
     "jest-junit": "^14.0.1",
     "rollup": "^3.2.3",
     "ts-jest": "^29.0.3",
@@ -70,20 +66,20 @@
     "rollup-plugin-typescript2": "^0.34.1"
   },
   "devDependencies": {
-    "@jest/globals": "^29.2.1",
+    "@jest/globals": "^29.2.2",
     "@jest/types": "^29.2.1",
     "@run-z/eslint-config": "^3.2.2",
     "@run-z/prettier-config": "^2.0.0",
-    "@swc/core": "^1.3.9",
+    "@swc/core": "^1.3.10",
     "@swc/jest": "^0.2.23",
-    "@types/node": "^16.11.68",
-    "@typescript-eslint/eslint-plugin": "^5.40.1",
-    "@typescript-eslint/parser": "^5.40.1",
-    "eslint": "^8.25.0",
+    "@types/node": "^16.18.0",
+    "@typescript-eslint/eslint-plugin": "^5.41.0",
+    "@typescript-eslint/parser": "^5.41.0",
+    "eslint": "^8.26.0",
     "gh-pages": "^4.0.0",
-    "jest": "^29.2.1",
+    "jest": "^29.2.2",
     "jest-junit": "^14.0.1",
-    "jest-mock": "^29.2.1",
+    "jest-mock": "^29.2.2",
     "prettier": "^2.7.1",
     "prettier-eslint-cli": "^7.1.0",
     "rollup": "^3.2.3",
@@ -91,7 +87,7 @@
     "shx": "^0.3.4",
     "ts-jest": "^29.0.3",
     "tslib": "^2.4.0",
-    "typedoc": "^0.23.17",
+    "typedoc": "^0.23.18",
     "typescript": "^4.8.4"
   },
   "scripts": {
