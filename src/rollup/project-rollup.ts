@@ -15,7 +15,7 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
   /**
    * Configures and builds Rollup options.
    *
-   * {@link ProjectConfig.load Loads project configuration} if one omitted.
+   * {@link ProjectConfig.build Build project configuration} if one omitted.
    *
    * @param init - Rollup initialization options.
    *
@@ -23,7 +23,7 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
    */
   static async build(this: void, init: ProjectRollupInit = {}): Promise<RollupOptions> {
     if (!init.project) {
-      init = { ...init, project: await ProjectConfig.load() };
+      init = { ...init, project: await ProjectConfig.build() };
     }
 
     return await new ProjectRollup(init).build();

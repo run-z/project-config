@@ -10,13 +10,13 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
   /**
    * Configures and builds Jest options.
    *
-   * {@link ProjectConfig.load Loads project configuration} if one omitted.
+   * {@link ProjectConfig.build Builds project configuration} if one omitted.
    *
    * @returns A promise resolved to Jest options.
    */
   static async build(this: void, init: ProjectTestsInit = {}): Promise<Config.InitialOptions> {
     if (!init.project) {
-      init = { ...init, project: await ProjectConfig.load() };
+      init = { ...init, project: await ProjectConfig.build() };
     }
 
     return new ProjectTests(init).build();

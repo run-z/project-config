@@ -13,19 +13,19 @@ import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-t
 export class ProjectConfig implements ProjectInit {
 
   /**
-   * Loads project configuration from the given module if one exists.
+   * Builds project configuration.
    *
-   * Target default export of target ESM module contains either {@link ProjectConfig project configuration} instance,
-   * or {@link ProjectInit project initialization options}. The latter is used to construct new project configuration.
+   * Tries to load configuration from specified module. The default export of this module is either a
+   * {@link ProjectConfig project configuration} instance, or {@link ProjectInit project initialization options}.
+   * The latter used to construct new project configuration.
    *
    * If no configuration module found, then new project configuration constructed.
    *
-   * @param url - project configuration module specifier relative to current working dir. `./project.config.js` by
-   * default.
+   * @param url - configuration module specifier relative to current working dir. `./project.config.js` by default.
    *
-   * @returns Project configuration.
+   * @returns Built project configuration.
    */
-  static async load(url = './project.config.js'): Promise<ProjectConfig> {
+  static async build(url = './project.config.js'): Promise<ProjectConfig> {
     if (url.startsWith('./') || url.startsWith('../')) {
       url = pathToFileURL(url).href;
     }
