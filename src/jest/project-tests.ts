@@ -1,5 +1,5 @@
+import { Config } from '@jest/types';
 import path from 'node:path';
-import { InitialOptionsTsJest } from 'ts-jest';
 import { ProjectConfig } from '../project-config.js';
 
 /**
@@ -10,15 +10,21 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
   /**
    * Configures and builds Jest options.
    *
+   * {@link ProjectConfig.load Loads project configuration} if one omitted.
+   *
    * @returns A promise resolved to Jest options.
    */
-  static async build(this: void, init?: ProjectTestsInit): Promise<InitialOptionsTsJest> {
+  static async build(this: void, init: ProjectTestsInit = {}): Promise<Config.InitialOptions> {
+    if (!init.project) {
+      init = { ...init, project: await ProjectConfig.load() };
+    }
+
     return new ProjectTests(init).build();
   }
 
   readonly #project: ProjectConfig;
   readonly #runner: 'swc' | 'ts-jest';
-  readonly #options: InitialOptionsTsJest;
+  readonly #options: Config.InitialOptions;
 
   /**
    * Constructs project tests configuration.
@@ -45,7 +51,7 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
     return this.#runner;
   }
 
-  get options(): InitialOptionsTsJest {
+  get options(): Config.InitialOptions {
     return this.#options;
   }
 
@@ -54,13 +60,13 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
    *
    * @returns A promise resolved to Jest options.
    */
-  async build(): Promise<InitialOptionsTsJest> {
+  async build(): Promise<Config.InitialOptions> {
     const swc = this.runner === 'swc';
     const options = this.#options;
     const output = await this.project.output;
     const { targetDir, cacheDir } = output;
-    const config: InitialOptionsTsJest &
-      Required<Pick<InitialOptionsTsJest, 'reporters' | 'transform'>> = {
+    const config: Config.InitialOptions &
+      Required<Pick<Config.InitialOptions, 'reporters' | 'transform'>> = {
       ...options,
       cacheDirectory: path.join(cacheDir, 'jest'),
       extensionsToTreatAsEsm: options.extensionsToTreatAsEsm ?? ['.ts'],
@@ -186,7 +192,7 @@ export interface ProjectTestsInit {
   /**
    * Jest configuration options to apply.
    */
-  readonly options?: InitialOptionsTsJest | undefined;
+  readonly options?: Config.InitialOptions | undefined;
 }
 
 function ProjectTests$defaultRunner(): 'swc' | 'ts-jest' {

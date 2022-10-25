@@ -1,4 +1,5 @@
 import path from 'node:path';
+import process from 'node:process';
 import { PackageJson } from './package/package-json.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
@@ -8,7 +9,33 @@ import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-t
 /**
  * Project configuration.
  */
-export class ProjectConfig {
+export class ProjectConfig implements ProjectInit {
+
+  /**
+   * Loads project configuration from the given module if one exists.
+   *
+   * Target default export of target ESM module contains either {@link ProjectConfig project configuration} instance,
+   * or {@link ProjectInit project initialization options}. The latter is used to construct new project configuration.
+   *
+   * If no configuration module found, then new project configuration constructed.
+   *
+   * @param url - URL of project configuration module. `project.config.js` by default.
+   *
+   * @returns Project configuration.
+   */
+  static async load(url = 'project.config.js'): Promise<ProjectConfig> {
+    let config: ProjectInit | undefined;
+
+    try {
+      const configModule: { default: ProjectInit } = await import(url);
+
+      config = configModule.default;
+    } catch {
+      // No project config.
+    }
+
+    return config instanceof ProjectConfig ? config : new ProjectConfig();
+  }
 
   readonly #init: ProjectInit;
   readonly #rootDir: string;
