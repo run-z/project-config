@@ -1,5 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
 import { PackageJson } from './package/package-json.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
@@ -19,19 +20,24 @@ export class ProjectConfig implements ProjectInit {
    *
    * If no configuration module found, then new project configuration constructed.
    *
-   * @param url - URL of project configuration module. `project.config.js` by default.
+   * @param url - project configuration module specifier relative to current working dir. `./project.config.js` by
+   * default.
    *
    * @returns Project configuration.
    */
-  static async load(url = 'project.config.js'): Promise<ProjectConfig> {
+  static async load(url = './project.config.js'): Promise<ProjectConfig> {
+    if (url.startsWith('./') || url.startsWith('../')) {
+      url = pathToFileURL(url).href;
+    }
+
     let config: ProjectInit | undefined;
 
     try {
       const configModule: { default: ProjectInit } = await import(url);
 
       config = configModule.default;
-    } catch {
-      // No project config.
+    } catch (error) {
+      // No project config module.
     }
 
     return config instanceof ProjectConfig ? config : new ProjectConfig();
