@@ -114,39 +114,43 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
 
     file
       .section('Node.js modules')
-      .entry('node_modules/')
-      .ignore()
+      .replace(section => {
+        section.entry('node_modules/').ignore();
+      })
       .file.section('IntelliJ IDEA files')
-      .entry('.idea')
-      .ignore()
-      .entry('*.iml')
-      .ignore()
+      .replace(section => {
+        section.entry('.idea').ignore().entry('*.iml').ignore();
+      })
       .file.section('Logs')
-      .entry('*.log')
-      .ignore()
+      .replace(section => {
+        section.entry('*.log').ignore();
+      })
       .file.section('Ignore lock files as this project developed within (private) pnpm worktree')
-      .entry('yarn.lock')
-      .ignore()
-      .entry('package-lock.json')
-      .ignore()
-      .entry('pnpm-lock.yaml')
-      .ignore()
+      .replace(section => {
+        section
+          .entry('yarn.lock')
+          .ignore()
+          .entry('package-lock.json')
+          .ignore()
+          .entry('pnpm-lock.yaml')
+          .ignore();
+      })
       .file.section('Package archive')
-      .entry('*.tgz')
-      .ignore()
+      .replace(section => {
+        section.entry('*.tgz').ignore();
+      })
       .file.section('Intermediate files')
-      .entry(gitIgnorePath(rootDir, targetDir))
-      .setMatch('dirs')
-      .ignore()
+      .replace(section => {
+        section.entry(gitIgnorePath(rootDir, targetDir)).setMatch('dirs').ignore();
+      })
       .file.section('Distribution directory')
-      .entry(gitIgnorePath(rootDir, distDir))
-      .setMatch('dirs')
-      .ignore()
+      .replace(section => {
+        section.entry(gitIgnorePath(rootDir, distDir)).setMatch('dirs').ignore();
+      })
       .file.section('Type definitions')
-      .entry('*.d.ts')
-      .ignore()
-      .entry('*.d.ts.map')
-      .ignore();
+      .replace(section => {
+        section.entry('*.d.ts').ignore().entry('*.d.ts.map').ignore();
+      });
 
     return await file.save(filePath);
   }
@@ -176,53 +180,61 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
 
     file
       .section('Node.js modules')
-      .entry('node_modules/')
-      .ignore()
+      .replace(section => {
+        section.entry('node_modules/').ignore();
+      })
       .file.section('IntelliJ IDEA files')
-      .entry('.idea')
-      .ignore()
-      .entry('*.iml')
-      .ignore()
+      .replace(section => {
+        section.entry('.idea').ignore().entry('*.iml').ignore();
+      })
       .file.section('Logs')
-      .entry('*.log')
-      .ignore()
+      .replace(section => {
+        section.entry('*.log').ignore();
+      })
       .file.section('Package archive')
-      .entry('*.tgz')
-      .ignore()
+      .replace(section => {
+        section.entry('*.tgz').ignore();
+      })
       .file.section('Source files')
-      .entry(gitIgnorePath(rootDir, sourceDir))
-      .setMatch('dirs')
+      .replace(section => {
+        section.entry(gitIgnorePath(rootDir, sourceDir)).setMatch('dirs').ignore();
+      })
       .file.section('Intermediate files')
-      .entry(gitIgnorePath(rootDir, targetDir))
-      .setMatch('dirs')
-      .ignore()
+      .replace(section => {
+        section.entry(gitIgnorePath(rootDir, targetDir)).setMatch('dirs').ignore();
+      })
       .file.section('Build configurations')
-      .entry('/.*')
-      .ignore()
-      .entry('/*.cjs')
-      .ignore()
-      .entry('/*.js')
-      .ignore()
-      .entry('/*.json')
-      .ignore()
-      .entry('/*.mjs')
-      .ignore()
+      .replace(section => {
+        section
+          .entry('/.*')
+          .ignore()
+          .entry('/*.cjs')
+          .ignore()
+          .entry('/*.js')
+          .ignore()
+          .entry('/*.json')
+          .ignore()
+          .entry('/*.mjs')
+          .ignore();
+      })
       .file.section('Package lock')
-      .entry('yarn.lock')
-      .ignore()
-      .entry('package-lock.json')
-      .ignore()
-      .entry('pnpm-lock.yaml')
-      .ignore()
+      .replace(section => {
+        section
+          .entry('yarn.lock')
+          .ignore()
+          .entry('package-lock.json')
+          .ignore()
+          .entry('pnpm-lock.yaml')
+          .ignore();
+      })
       .file.section('Include distribution dir')
-      .entry(gitIgnorePath(rootDir, distDir))
-      .setMatch('dirs')
-      .ignore(false)
+      .replace(section => {
+        section.entry(gitIgnorePath(rootDir, distDir)).setMatch('dirs').ignore(false);
+      })
       .file.section('Include type definitions')
-      .entry('*.d.ts')
-      .ignore(false)
-      .entry('*.d.ts.map')
-      .ignore(false);
+      .replace(section => {
+        section.entry('*.d.ts').ignore(false).entry('*.d.ts.map').ignore(false);
+      });
 
     return file.save(filePath);
   }
