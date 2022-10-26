@@ -5,19 +5,23 @@
 [![GitHub Project][github-image]][github-url]
 [![API Documentation][api-docs-image]][api documentation]
 
-Provides:
-
-- Set of [build tools][].
+- Provides a set of [build tools][].
 
   Such as `build-z` to bundle project files, or `clean-z` to clean output.
 
-- Configuration support for other development tools.
+- Provides configuration support for various development tools.
 
   Such as [Rollup] and [Jest].
 
-- Default [project layout][].
+- Implies [project layout][].
 
   All development and build tools respect this layout.
+
+- Maintains some project configuration files.
+
+  Such as `.gitignore` and `.npmignore`.
+
+## Installation
 
 Add `@run-z/project-config` to your project:
 
