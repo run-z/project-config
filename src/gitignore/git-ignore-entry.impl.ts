@@ -128,6 +128,7 @@ export class GitIgnoreEntryCtl {
   #match?: GitIgnoreEntry.Match;
   #effect?: GitIgnoreEntry.Effect;
   #attachedTo?: GitIgnoreSectionCtl;
+  #detached = false;
 
   constructor(pattern: string, match?: GitIgnoreEntry.Match, effect?: GitIgnoreEntry.Effect) {
     this.#pattern = pattern;
@@ -177,7 +178,7 @@ export class GitIgnoreEntryCtl {
     sectionCtl: GitIgnoreSectionCtl,
     entry: GitIgnoreEntry = this.entryFor(sectionCtl),
   ): GitIgnoreEntryCtl {
-    if (this.#attachedTo === sectionCtl) {
+    if (!this.#detached && this.#attachedTo === sectionCtl) {
       return this;
     }
 
@@ -213,9 +214,17 @@ export class GitIgnoreEntryCtl {
   }
 
   #modify(sectionCtl: GitIgnoreSectionCtl): void {
-    if (this.#attachedTo === sectionCtl) {
+    if (!this.#detached && this.#attachedTo === sectionCtl) {
       sectionCtl.fileCtl.modify();
     }
+  }
+
+  reAttach(): void {
+    this.#detached = false;
+  }
+
+  detach(): void {
+    this.#detached = true;
   }
 
 }
