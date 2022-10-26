@@ -20,6 +20,12 @@ class GitIgnoreSection$ extends GitIgnoreSection {
     return this.#ctl.entry(pattern);
   }
 
+  override replace(build: (section: this) => void): this {
+    this.#ctl.replaceEntries(build.bind(this, this));
+
+    return this;
+  }
+
 }
 
 /**
@@ -27,9 +33,10 @@ class GitIgnoreSection$ extends GitIgnoreSection {
  */
 export class GitIgnoreSectionCtl {
 
-  readonly #entries = new Map<string, GitIgnoreEntry>();
+  #entries = new Map<string, GitIgnoreEntry>();
   readonly #fileCtl: GitIgnoreFileCtl;
   readonly #section: GitIgnoreSection$;
+  #replaced?: Map<string, GitIgnoreEntry>;
 
   constructor(fileCtl: GitIgnoreFileCtl, title: string) {
     this.#fileCtl = fileCtl;
@@ -67,6 +74,7 @@ export class GitIgnoreSectionCtl {
 
   attachEntry(entry: GitIgnoreEntry, entryCtl: GitIgnoreEntryCtl): GitIgnoreEntryCtl {
     this.#entries.set(entry.pattern, entry);
+    this.#replaced?.delete(entry.pattern);
 
     return this.#fileCtl.attachEntry(entryCtl);
   }
@@ -74,6 +82,26 @@ export class GitIgnoreSectionCtl {
   removeEntry(entryCtl: GitIgnoreEntryCtl): void {
     this.#entries.delete(entryCtl.pattern);
     this.#fileCtl.removeEntry(entryCtl);
+  }
+
+  replaceEntries(build: () => void): void {
+    if (this.#replaced) {
+      build();
+
+      return;
+    }
+
+    this.#replaced = this.#entries;
+    this.#entries = new Map();
+
+    try {
+      build();
+    } finally {
+      for (const replaced of this.#replaced.values()) {
+        replaced.remove();
+      }
+      this.#replaced = undefined;
+    }
   }
 
 }

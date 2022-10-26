@@ -127,7 +127,7 @@ export abstract class GitIgnoreEntry {
    *
    * Does nothing if the entry is already {@link isDetached detached}.
    *
-   * @returne Parent section.
+   * @returns Parent section.
    */
   abstract remove(): GitIgnoreSection;
 
