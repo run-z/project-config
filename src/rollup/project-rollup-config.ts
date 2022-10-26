@@ -4,23 +4,37 @@ import { RollupOptions } from 'rollup';
 import flatDts from 'rollup-plugin-flat-dts';
 import ts from 'rollup-plugin-typescript2';
 import typescript from 'typescript';
-import { ProjectConfig } from '../project-config.js';
+import { ProjectConfig, ProjectSpec } from '../project-config.js';
 import { ProjectEntry } from '../project-entry.js';
 
 /**
- * Rollup configuration.
+ * Rollup configuration of the project.
  */
-export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupInit> {
+export class ProjectRollupConfig implements ProjectRollupInit, Required<ProjectRollupInit> {
 
   /**
-   * Configures and builds Rollup options.
+   * Gains specified Rollup configuration of the project.
    *
-   * @param init - Rollup initialization options.
+   * Gains {@link ProjectConfig.of project configuration} first.
    *
-   * @returns A promise resolved to Rollup options.
+   * Rollup configuration can be specified by one of:
+   *
+   * - Rollup configuration instance, which is returned as is.
+   * - Rollup initialization options. New Rollup configuration created ion this case.
+   *
+   * @param spec - Rollup configuration specifier.
+   *
+   * @returns Promise resolved to Rollup configuration of the project.
    */
-  static async build(this: void, init?: ProjectRollupInit): Promise<RollupOptions> {
-    return await new ProjectRollup(init).build();
+  static async of(spec?: ProjectRollupSpec): Promise<ProjectRollupConfig> {
+    if (spec instanceof ProjectRollupConfig) {
+      return spec;
+    }
+
+    return new ProjectRollupConfig({
+      ...spec,
+      project: await ProjectConfig.of(spec?.project),
+    });
   }
 
   readonly #project: ProjectConfig;
@@ -36,6 +50,9 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
     this.#project = project;
   }
 
+  /**
+   * Configured project.
+   */
   get project(): ProjectConfig {
     return this.#project;
   }
@@ -43,9 +60,9 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
   /**
    * Builds Rollup options.
    *
-   * @returns A promise resolved to Rollup options.
+   * @returns Promise resolved to Rollup options.
    */
-  async build(): Promise<RollupOptions> {
+  async toRollupOptions(): Promise<RollupOptions> {
     const { sourceDir } = this.#project;
     const output = await this.#project.output;
     const { distDir, cacheDir } = output;
@@ -170,13 +187,18 @@ export class ProjectRollup implements ProjectRollupInit, Required<ProjectRollupI
 }
 
 /**
- * Rollup initialization options.
+ * {@link ProjectRollupConfig.of Specifier} of Rollup configuration of the project.
  */
-export interface ProjectRollupInit {
+export type ProjectRollupSpec = ProjectRollupConfig | ProjectRollupInit<ProjectSpec> | undefined;
+
+/**
+ * Rollup initialization options.
+ *
+ * @typeParam TProject - Type of project configuration specifier.
+ */
+export interface ProjectRollupInit<TProject extends ProjectSpec = ProjectConfig> {
   /**
-   * Project configuration.
-   *
-   * New one will be constructed if omitted.
+   * Configured project specifier.
    */
-  readonly project?: ProjectConfig | undefined;
+  readonly project?: TProject;
 }

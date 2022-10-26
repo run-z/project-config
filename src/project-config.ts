@@ -1,4 +1,6 @@
 import path from 'node:path';
+import process from 'node:process';
+import { pathToFileURL } from 'node:url';
 import { PackageJson } from './package/package-json.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
@@ -8,7 +10,60 @@ import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-t
 /**
  * Project configuration.
  */
-export class ProjectConfig {
+export class ProjectConfig implements ProjectInit {
+
+  /**
+   * Loads project configuration from specified module.
+   *
+   * The default export of target ESM module treated as {@link ProjectConfig.of project initializer}, i.e. either as
+   * project configuration instance, or its initialization options.
+   *
+   * If no configuration module found, then new project configuration constructed.
+   *
+   * @param url - configuration module specifier relative to current working dir. `./project.config.js` by default.
+   *
+   * @returns Promise resolved to project configuration.
+   */
+  static async load(url = './project.config.js'): Promise<ProjectConfig> {
+    if (url.startsWith('./') || url.startsWith('../')) {
+      url = pathToFileURL(url).href;
+    }
+
+    let config: ProjectInit = {};
+
+    try {
+      const configModule: { default: ProjectInit } = await import(url);
+
+      config = configModule.default;
+    } catch (error) {
+      // No project config module.
+    }
+
+    return this.of(config);
+  }
+
+  /**
+   * Gains specified project configuration.
+   *
+   * Project configuration can be specified by one of:
+   *
+   * - Project configuration instance, which is returned as is.
+   * - Project initialization options. New project configuration created in this case.
+   * - Configuration module specifier. Project configuration is {@link ProjectConfig.load loaded} from that module
+   *   in this case.
+   * - Nothing. Project configuration is {@link ProjectConfig.load loaded} from default location in this case.
+   *
+   * @param spec - Project configuration specifier.
+   *
+   * @returns Promise resolved to project configuration.
+   */
+  static async of(spec?: ProjectSpec): Promise<ProjectConfig> {
+    if (spec == null || typeof spec === 'string') {
+      return ProjectConfig.load(spec);
+    }
+
+    return spec instanceof ProjectConfig ? spec : new ProjectConfig(spec);
+  }
 
   readonly #init: ProjectInit;
   readonly #rootDir: string;
@@ -136,6 +191,11 @@ export class ProjectConfig {
   }
 
 }
+
+/**
+ * Project configuration {@link ProjectConfig.of specifier}.
+ */
+export type ProjectSpec = ProjectConfig | ProjectInit | string | undefined;
 
 /**
  * Project initialization options.

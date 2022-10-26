@@ -1,31 +1,45 @@
+import { Config } from '@jest/types';
 import path from 'node:path';
-import { InitialOptionsTsJest } from 'ts-jest';
-import { ProjectConfig } from '../project-config.js';
+import { ProjectConfig, ProjectSpec } from '../project-config.js';
 
 /**
  * Configuration of project tests utilizing Jest.
  */
-export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit> {
+export class ProjectJestConfig implements ProjectJestInit, Required<ProjectJestInit> {
 
   /**
-   * Configures and builds Jest options.
+   * Gains specified configuration of project tests utilizing Jest.
    *
-   * @returns A promise resolved to Jest options.
+   * {@link ProjectConfig.build Builds project configuration} if one omitted.
+   *
+   * Tests configuration can be specified by one of:
+   *
+   * - Tests configuration instance, which is returned as is.
+   * - Tests initialization options. New tests configuration created ion this case.
+   *
+   * @returns Promise resolved to configuration of project tests.
    */
-  static async build(this: void, init?: ProjectTestsInit): Promise<InitialOptionsTsJest> {
-    return new ProjectTests(init).build();
+  static async of(spec?: ProjectJestSpec): Promise<ProjectJestConfig> {
+    if (spec instanceof ProjectJestConfig) {
+      return spec;
+    }
+
+    return new ProjectJestConfig({
+      ...spec,
+      project: await ProjectConfig.of(spec?.project),
+    });
   }
 
   readonly #project: ProjectConfig;
   readonly #runner: 'swc' | 'ts-jest';
-  readonly #options: InitialOptionsTsJest;
+  readonly #options: Config.InitialOptions;
 
   /**
    * Constructs project tests configuration.
    *
    * @param init - Tests initialization options.
    */
-  constructor(init: ProjectTestsInit = {}) {
+  constructor(init: ProjectJestInit = {}) {
     const {
       project = new ProjectConfig(),
       runner = ProjectTests$defaultRunner(),
@@ -37,6 +51,9 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
     this.#options = options;
   }
 
+  /**
+   * Configured project.
+   */
   get project(): ProjectConfig {
     return this.#project;
   }
@@ -45,22 +62,22 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
     return this.#runner;
   }
 
-  get options(): InitialOptionsTsJest {
+  get options(): Config.InitialOptions {
     return this.#options;
   }
 
   /**
    * Builds Jest options.
    *
-   * @returns A promise resolved to Jest options.
+   * @returns Promise resolved to Jest options.
    */
-  async build(): Promise<InitialOptionsTsJest> {
+  async toJestOptions(): Promise<Config.InitialOptions> {
     const swc = this.runner === 'swc';
     const options = this.#options;
     const output = await this.project.output;
     const { targetDir, cacheDir } = output;
-    const config: InitialOptionsTsJest &
-      Required<Pick<InitialOptionsTsJest, 'reporters' | 'transform'>> = {
+    const config: Config.InitialOptions &
+      Required<Pick<Config.InitialOptions, 'reporters' | 'transform'>> = {
       ...options,
       cacheDirectory: path.join(cacheDir, 'jest'),
       extensionsToTreatAsEsm: options.extensionsToTreatAsEsm ?? ['.ts'],
@@ -164,15 +181,18 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
 }
 
 /**
- * Tests initialization options.
+ * {@link ProjectJestConfig.of Specifier} of project tests utilizing Jest
  */
-export interface ProjectTestsInit {
+export type ProjectJestSpec = ProjectJestConfig | ProjectJestInit | undefined;
+
+/**
+ * Initialization options of project tests utilizing Jest.
+ */
+export interface ProjectJestInit<TProject extends ProjectSpec = ProjectConfig> {
   /**
-   * Project configuration.
-   *
-   * New one will be constructed if omitted.
+   * Project configuration {@link ProjectConfig.of specified}.
    */
-  readonly project?: ProjectConfig | undefined;
+  readonly project?: TProject;
 
   /**
    * Test runner.
@@ -186,7 +206,7 @@ export interface ProjectTestsInit {
   /**
    * Jest configuration options to apply.
    */
-  readonly options?: InitialOptionsTsJest | undefined;
+  readonly options?: Config.InitialOptions | undefined;
 }
 
 function ProjectTests$defaultRunner(): 'swc' | 'ts-jest' {
