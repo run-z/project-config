@@ -10,7 +10,7 @@ export class ProjectJestConfig implements ProjectJestInit, Required<ProjectJestI
   /**
    * Gains specified configuration of project tests utilizing Jest.
    *
-   * {@link ProjectConfig.build Builds project configuration} if one omitted.
+   * Gains {@link @run-z/project-config!ProjectConfig.of project configuration} first.
    *
    * Tests configuration can be specified by one of:
    *
@@ -190,7 +190,7 @@ export type ProjectJestSpec = ProjectJestConfig | ProjectJestInit | undefined;
  */
 export interface ProjectJestInit<TProject extends ProjectSpec = ProjectConfig> {
   /**
-   * Project configuration {@link ProjectConfig.of specified}.
+   * Configured project {@link @run-z/project-config!ProjectConfig.of specifier}.
    */
   readonly project?: TProject;
 

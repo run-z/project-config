@@ -15,7 +15,7 @@ export class ProjectRollupConfig implements ProjectRollupInit, Required<ProjectR
   /**
    * Gains specified Rollup configuration of the project.
    *
-   * Gains {@link ProjectConfig.of project configuration} first.
+   * Gains {@link @run-z/project-config!ProjectConfig.of project configuration} first.
    *
    * Rollup configuration can be specified by one of:
    *
@@ -198,7 +198,7 @@ export type ProjectRollupSpec = ProjectRollupConfig | ProjectRollupInit<ProjectS
  */
 export interface ProjectRollupInit<TProject extends ProjectSpec = ProjectConfig> {
   /**
-   * Configured project specifier.
+   * Configured project {@link @run-z/project-config!ProjectConfig.of specifier}.
    */
   readonly project?: TProject;
 }
