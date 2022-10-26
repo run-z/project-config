@@ -13,24 +13,23 @@ import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-t
 export class ProjectConfig implements ProjectInit {
 
   /**
-   * Builds project configuration.
+   * Loads project configuration from specified module.
    *
-   * Tries to load configuration from specified module. The default export of this module is either a
-   * {@link ProjectConfig project configuration} instance, or {@link ProjectInit project initialization options}.
-   * The latter used to construct new project configuration.
+   * The default export of target ESM module treated as {@link ProjectConfig.of project initializer}, i.e. either as
+   * project configuration instance, or its initialization options.
    *
    * If no configuration module found, then new project configuration constructed.
    *
    * @param url - configuration module specifier relative to current working dir. `./project.config.js` by default.
    *
-   * @returns Built project configuration.
+   * @returns Promise resolved to project configuration.
    */
-  static async build(url = './project.config.js'): Promise<ProjectConfig> {
+  static async load(url = './project.config.js'): Promise<ProjectConfig> {
     if (url.startsWith('./') || url.startsWith('../')) {
       url = pathToFileURL(url).href;
     }
 
-    let config: ProjectInit | undefined;
+    let config: ProjectInit = {};
 
     try {
       const configModule: { default: ProjectInit } = await import(url);
@@ -40,7 +39,30 @@ export class ProjectConfig implements ProjectInit {
       // No project config module.
     }
 
-    return config instanceof ProjectConfig ? config : new ProjectConfig();
+    return this.of(config);
+  }
+
+  /**
+   * Gains specified project configuration.
+   *
+   * Project configuration can be specified by one of:
+   *
+   * - Project configuration instance, which is returned as is.
+   * - Project initialization options. New project configuration created in this case.
+   * - Configuration module specifier. Project configuration is {@link ProjectConfig.load loaded} from that module
+   *   in this case.
+   * - Nothing. Project configuration is {@link ProjectConfig.load loaded} from default location in this case.
+   *
+   * @param spec - Project configuration specifier.
+   *
+   * @returns Promise resolved to project configuration.
+   */
+  static async of(spec?: ProjectSpec): Promise<ProjectConfig> {
+    if (spec == null || typeof spec === 'string') {
+      return ProjectConfig.load(spec);
+    }
+
+    return spec instanceof ProjectConfig ? spec : new ProjectConfig(spec);
   }
 
   readonly #init: ProjectInit;
@@ -169,6 +191,11 @@ export class ProjectConfig implements ProjectInit {
   }
 
 }
+
+/**
+ * Project configuration {@link ProjectConfig.of specifier}.
+ */
+export type ProjectSpec = ProjectConfig | ProjectInit | string | undefined;
 
 /**
  * Project initialization options.

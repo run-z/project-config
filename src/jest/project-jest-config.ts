@@ -1,25 +1,33 @@
 import { Config } from '@jest/types';
 import path from 'node:path';
-import { ProjectConfig } from '../project-config.js';
+import { ProjectConfig, ProjectSpec } from '../project-config.js';
 
 /**
  * Configuration of project tests utilizing Jest.
  */
-export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit> {
+export class ProjectJestConfig implements ProjectJestInit, Required<ProjectJestInit> {
 
   /**
-   * Configures and builds Jest options.
+   * Gains specified configuration of project tests utilizing Jest.
    *
    * {@link ProjectConfig.build Builds project configuration} if one omitted.
    *
-   * @returns A promise resolved to Jest options.
+   * Tests configuration can be specified by one of:
+   *
+   * - Tests configuration instance, which is returned as is.
+   * - Tests initialization options. New tests configuration created ion this case.
+   *
+   * @returns Promise resolved to configuration of project tests.
    */
-  static async build(this: void, init: ProjectTestsInit = {}): Promise<Config.InitialOptions> {
-    if (!init.project) {
-      init = { ...init, project: await ProjectConfig.build() };
+  static async of(spec?: ProjectJestSpec): Promise<ProjectJestConfig> {
+    if (spec instanceof ProjectJestConfig) {
+      return spec;
     }
 
-    return new ProjectTests(init).build();
+    return new ProjectJestConfig({
+      ...spec,
+      project: await ProjectConfig.of(spec?.project),
+    });
   }
 
   readonly #project: ProjectConfig;
@@ -31,7 +39,7 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
    *
    * @param init - Tests initialization options.
    */
-  constructor(init: ProjectTestsInit = {}) {
+  constructor(init: ProjectJestInit = {}) {
     const {
       project = new ProjectConfig(),
       runner = ProjectTests$defaultRunner(),
@@ -43,6 +51,9 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
     this.#options = options;
   }
 
+  /**
+   * Configured project.
+   */
   get project(): ProjectConfig {
     return this.#project;
   }
@@ -58,9 +69,9 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
   /**
    * Builds Jest options.
    *
-   * @returns A promise resolved to Jest options.
+   * @returns Promise resolved to Jest options.
    */
-  async build(): Promise<Config.InitialOptions> {
+  async toJestOptions(): Promise<Config.InitialOptions> {
     const swc = this.runner === 'swc';
     const options = this.#options;
     const output = await this.project.output;
@@ -170,15 +181,18 @@ export class ProjectTests implements ProjectTestsInit, Required<ProjectTestsInit
 }
 
 /**
- * Tests initialization options.
+ * {@link ProjectJestConfig.of Specifier} of project tests utilizing Jest
  */
-export interface ProjectTestsInit {
+export type ProjectJestSpec = ProjectJestConfig | ProjectJestInit | undefined;
+
+/**
+ * Initialization options of project tests utilizing Jest.
+ */
+export interface ProjectJestInit<TProject extends ProjectSpec = ProjectConfig> {
   /**
-   * Project configuration.
-   *
-   * New one will be constructed if omitted.
+   * Project configuration {@link ProjectConfig.of specified}.
    */
-  readonly project?: ProjectConfig | undefined;
+  readonly project?: TProject;
 
   /**
    * Test runner.
