@@ -177,6 +177,19 @@ export class GitIgnoreFile {
   }
 
   /**
+   * Marks the file {@link isModified modified} or not.
+   *
+   * @param modified - `true` to mark the file modified, or `false` to mark it unmodified. `true` by default.
+   *
+   * @returns `this` instance.
+   */
+  modify(modified = true): this {
+    this.#ctl.modify(modified);
+
+    return this;
+  }
+
+  /**
    * Builds content of file in `.gitignore` format.
    *
    * @param eol - End of line symbol. Defaults to `os.EOL`.

@@ -33,10 +33,10 @@ class GitIgnoreSection$ extends GitIgnoreSection {
  */
 export class GitIgnoreSectionCtl {
 
-  #entries = new Map<string, GitIgnoreEntry>();
+  #entries = new Map<string, [GitIgnoreEntry, GitIgnoreEntryCtl]>();
   readonly #fileCtl: GitIgnoreFileCtl;
   readonly #section: GitIgnoreSection$;
-  #replaced?: Map<string, GitIgnoreEntry>;
+  #detached?: Map<string, [GitIgnoreEntry, GitIgnoreEntryCtl]>;
 
   constructor(fileCtl: GitIgnoreFileCtl, title: string) {
     this.#fileCtl = fileCtl;
@@ -52,7 +52,7 @@ export class GitIgnoreSectionCtl {
   }
 
   *entries(): IterableIterator<GitIgnoreEntry> {
-    for (const entry of this.#entries.values()) {
+    for (const [entry] of this.#entries.values()) {
       if (entry.currentSection !== this.section) {
         this.#entries.delete(entry.pattern);
       } else {
@@ -61,20 +61,29 @@ export class GitIgnoreSectionCtl {
     }
   }
 
-  entry(rawPattern: string, ctl?: GitIgnoreEntryCtl): GitIgnoreEntry {
+  entry(rawPattern: string, entryCtl?: GitIgnoreEntryCtl): GitIgnoreEntry {
     const { pattern, update } = gitIgnorePattern(rawPattern);
-    const entry = this.#entries.get(pattern);
+    const existing = this.#entries.get(pattern);
 
-    if (entry) {
-      return update(entry);
+    if (existing) {
+      return update(existing[0]);
     }
 
-    return update((ctl || new GitIgnoreEntryCtl(pattern)).entryFor(this));
+    entryCtl ??= new GitIgnoreEntryCtl(pattern);
+
+    const entry = entryCtl.entryFor(this);
+
+    return update(entry);
   }
 
   attachEntry(entry: GitIgnoreEntry, entryCtl: GitIgnoreEntryCtl): GitIgnoreEntryCtl {
-    this.#entries.set(entry.pattern, entry);
-    this.#replaced?.delete(entry.pattern);
+    this.#entries.set(entry.pattern, [entry, entryCtl]);
+
+    if (this.#detached?.delete(entry.pattern)) {
+      entryCtl.reAttach();
+
+      return entryCtl;
+    }
 
     return this.#fileCtl.attachEntry(entryCtl);
   }
@@ -85,22 +94,30 @@ export class GitIgnoreSectionCtl {
   }
 
   replaceEntries(build: () => void): void {
-    if (this.#replaced) {
+    if (this.#detached) {
+      // Replacement already started.
       build();
 
       return;
     }
 
-    this.#replaced = this.#entries;
-    this.#entries = new Map();
+    // Detach all existing entries.
+    this.#detached = new Map();
+    for (const e of this.#entries.values()) {
+      const entryCtl = e[1];
+
+      entryCtl.detach();
+      this.#detached.set(entryCtl.pattern, e);
+    }
 
     try {
       build();
     } finally {
-      for (const replaced of this.#replaced.values()) {
+      // Remove still detached entries.
+      for (const [replaced] of this.#detached.values()) {
         replaced.remove();
       }
-      this.#replaced = undefined;
+      this.#detached = undefined;
     }
   }
 
