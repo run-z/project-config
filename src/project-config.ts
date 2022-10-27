@@ -20,26 +20,12 @@ export class ProjectConfig implements ProjectInit {
    *
    * If no configuration module found, then new project configuration constructed.
    *
-   * @param url - configuration module specifier relative to current working dir. `./project.config.js` by default.
+   * @param url - Configuration module specifier relative to current working dir. `./project.config.js` by default.
    *
    * @returns Promise resolved to project configuration.
    */
   static async load(url = './project.config.js'): Promise<ProjectConfig> {
-    if (url.startsWith('./') || url.startsWith('../')) {
-      url = pathToFileURL(url).href;
-    }
-
-    let config: ProjectInit = {};
-
-    try {
-      const configModule: { default: ProjectInit } = await import(url);
-
-      config = configModule.default;
-    } catch (error) {
-      // No project config module.
-    }
-
-    return this.of(config);
+    return this.of(await loadConfig(process.cwd(), url, {}));
   }
 
   /**
@@ -178,6 +164,22 @@ export class ProjectConfig implements ProjectInit {
     return this.#exports;
   }
 
+  /**
+   * Loads arbitrary configuration represented as ESM module.
+   *
+   * The module has to export configuration as default export.
+   *
+   * @param url - Configuration module specifier relative to {@link rootDir project root}.
+   * @param defaultConfig - Default configuration used when module not found.
+   *
+   * @returns Promise resolved to loaded configuration, or to `undefined` if no configuration file found.
+   *
+   * @throws When module not found and no default configuration provided.
+   */
+  async loadConfig<TConfig>(url: string, defaultConfig?: TConfig): Promise<TConfig> {
+    return await loadConfig(this.rootDir, url, defaultConfig);
+  }
+
   async #loadExports(): Promise<ReadonlyMap<string, ProjectExport>> {
     const entries = await Promise.all(
       [...this.packageJson.entryPoints.values()].map(async entryPoint => {
@@ -221,4 +223,31 @@ export interface ProjectInit extends ProjectOutputInit {
    * @defaultValue Loaded from `tsconfig.json`.
    */
   readonly typescript?: ProjectTypescriptInit;
+}
+
+async function loadConfig<TConfig>(
+  rootDir: string,
+  url: string,
+  defaultConfig?: TConfig,
+): Promise<TConfig> {
+  if (url.startsWith('./') || url.startsWith('../')) {
+    url = `${pathToFileURL(rootDir)}/${url}`;
+  }
+
+  try {
+    const configModule: { default: TConfig } = await import(url);
+
+    return configModule.default;
+  } catch (error) {
+    if (
+      defaultConfig !== undefined
+      && error instanceof Error
+      && (error as unknown as { code: string }).code === 'ERR_MODULE_NOT_FOUND'
+    ) {
+      // No configuration module found.
+      return defaultConfig;
+    }
+
+    throw error;
+  }
 }

@@ -7,6 +7,7 @@ import typescript from 'typescript';
 
 const externalModules = new Set(builtinModules);
 
+externalModules.add('deepmerge');
 externalModules.add('typescript');
 
 export default defineConfig({
