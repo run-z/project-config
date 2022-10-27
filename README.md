@@ -85,5 +85,8 @@ npm run build  # Bundle project files
 The following tools supported:
 
 - [build-z] - transpiles and bundles TypeScript source files with [Rollup].
+- [clean-z] - cleans the output by deleting output directories (`dist/`, `target/`, and cache one, according to
+  [project layout]).
 
 [build-z]: https://github.com/run-z/project-config/tree/master/doc/build-z.md
+[clean-z]: https://github.com/run-z/project-config/tree/master/doc/clean-z.md

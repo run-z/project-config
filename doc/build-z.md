@@ -64,7 +64,7 @@ src/
 `build-z` script utilizes [Rollup].
 
 Add `rollup.config.js` [Rollup configuration] file at project root to customize the build. Options added to this file
-will extend configuration created by `build-z`.
+extend configuration created by `build-z` automatically.
 
 Such configuration, however, can not be passed to `rollup` directly (e.g. with command like `rollup -c`). In order to
 make it possible, the configuration file may look like this:
