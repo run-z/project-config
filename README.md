@@ -7,7 +7,7 @@
 
 - Provides a set of [build tools][].
 
-  Such as `build-z` to bundle project files, or `clean-z` to clean output.
+  Such as `build-z` to bundle project files, or `clean-z` to clean the output.
 
 - Provides configuration support for various development tools.
 
@@ -42,6 +42,20 @@ and start using its tooling.
 [jest]: https://jestjs.io/
 [rollup]: https://rollupjs.org/
 
+## Project Layout
+
+[project layout]: #project-layout
+
+Project configuration implied to have the following directories:
+
+- `src/` directory for TypeScript sources.
+- `dist/` directory for distribution files.
+- `target/` directory for build targets not supposed to be published by NPM.
+
+There is also a cache directory created automatically in temporary system directory.
+
+This can me customized.
+
 ## Build Tools
 
 [build tools]: #build-tools
@@ -68,55 +82,8 @@ npm run test   # Run project tests
 npm run build  # Bundle project files
 ```
 
-## Project Layout
+The following tools supported:
 
-[project layout]: #project-layout
+- [build-z] - transpiles and bundles TypeScript source files with [Rollup].
 
-Directories:
-
-- `src/` directory for TypeScript sources.
-- `dist/` directory for distribution files.
-- `target/` directory for build targets not supposed to be published at NPM.
-
-There is also a cache directory created automatically in temporary system directory.
-
-This can me customized.
-
-### Source Files and Package Exports
-
-Each [entry point] in `package.json` expected to have corresponding directory within `src/` containing entry source
-file called `main.ts`, `mod.ts`, or `index.ts`.
-
-E.g. with the following `package.json` contents:
-
-```jsonc
-{
-  "exports": {
-    ".": {
-      "types": "./dist/project-config.d.ts",
-      "import": "./dist/project-config.js"
-    },
-    "./jest": {
-      "types": "./dist/project-config.jest.d.ts",
-      "import": "./dist/project-config.jest.js"
-    },
-    "./rollup": {
-      "types": "./dist/project-config.rollup.d.ts",
-      "import": "./dist/project-config.rollup.js"
-    }
-  }
-}
-```
-
-The file structure has to look like this:
-
-```
-src/
-  mod.ts -- main entry source file.
-  jest/
-    mod.ts -- source file for `./jest` entry.
-  rollup/
-    mod.ts -- source file for `./rollup` entry.
-```
-
-[entry point]: https://nodejs.org/dist/latest/docs/api/packages.html#package-entry-points
+[build-z]: https://github.com/run-z/project-config/tree/master/doc/build-z.md
