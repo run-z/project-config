@@ -30,6 +30,7 @@
     }
   },
   "bin": {
+    "build-z": "bin/build-z.js",
     "clean-z": "bin/clean-z.js"
   },
   "peerDependencies": {
@@ -62,6 +63,7 @@
     }
   },
   "dependencies": {
+    "deepmerge": "^4.2.2",
     "rollup-plugin-flat-dts": "^1.8.1",
     "rollup-plugin-typescript2": "^0.34.1"
   },

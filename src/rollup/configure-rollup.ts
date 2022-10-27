@@ -6,10 +6,11 @@ import { ProjectRollupConfig, ProjectRollupSpec } from './project-rollup-config.
  *
  * @param spec - Rollup configuration {@link ProjectRollupConfig.of specifier}.
  *
- * @returns Promise resolved to Rollup options.
+ * @returns Promise resolved to array of Rollup options.
  */
-export async function configureRollup(spec?: ProjectRollupSpec): Promise<RollupOptions> {
+export async function configureRollup(spec?: ProjectRollupSpec): Promise<RollupOptions[]> {
   const config = await ProjectRollupConfig.of(spec);
+  const options = await config.toRollupOptions();
 
-  return await config.toRollupOptions();
+  return options.list;
 }
