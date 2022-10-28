@@ -15,6 +15,7 @@ export default defineConfig({
     'project-config': './src/mod.ts',
     'project-config.jest': './src/jest/mod.ts',
     'project-config.rollup': './src/rollup/mod.ts',
+    'rollup.config': './src/rollup.config.js/main.ts',
   },
   plugins: [
     ts({
@@ -30,6 +31,7 @@ export default defineConfig({
     format: 'esm',
     sourcemap: true,
     entryFileNames: '[name].js',
+    chunkFileNames: '_[name].js',
     manualChunks(id) {
       if (id.startsWith(path.resolve('src', 'jest'))) {
         return 'project-config.jest';
