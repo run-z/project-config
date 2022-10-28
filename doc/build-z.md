@@ -9,6 +9,7 @@
 2. Adjust `package.json` scripts:
    ```json
    {
+     "exports": "./dist/main.js",
      "scripts": {
        "build": "build-z"
      }
@@ -63,8 +64,8 @@ src/
 
 `build-z` script utilizes [Rollup]. Rollup configuration is generated automatically.
 
-To customize Rollup configuration add `rollup.config.js` [Rollup configuration] file at project root. This
-configuration can be passed directly to Rollup by command like `rollup -c`.
+To customize, add `rollup.config.js` [Rollup configuration] file at project root. This configuration can be passed
+directly to Rollup by invoking `rollup -c`.
 
 Options added to configuration file passed to Rollup instead of automatically generated ones. To use automatically
 generated options and extend them, the `rollup.config.js` may like this:
