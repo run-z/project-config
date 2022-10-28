@@ -61,22 +61,31 @@ src/
 
 ## Customizing Rollup
 
-`build-z` script utilizes [Rollup].
+`build-z` script utilizes [Rollup]. Rollup configuration is generated automatically.
 
-Add `rollup.config.js` [Rollup configuration] file at project root to customize the build. Options added to this file
-extend configuration created by `build-z` automatically.
+To customize Rollup configuration add `rollup.config.js` [Rollup configuration] file at project root. This
+configuration can be passed directly to Rollup by command like `rollup -c`.
 
-Such configuration, however, can not be passed to `rollup` directly (e.g. with command like `rollup -c`). In order to
-make it possible, the configuration file may look like this:
+Options added to configuration file passed to Rollup instead of automatically generated ones. To use automatically
+generated options and extend them, the `rollup.config.js` may like this:
 
 ```javascript
 import { configureRollup } from '@run-z/project-config/rollup`;
 
 export default await configureRollup({
   options: {
-    // ...Custom Rollup options goes here
+    // ...Options to add on top of automatically generated one.
   },
 });
+```
+
+Invoking `rollup -c` in this case has the same effect as invoking `build-z`.
+
+_Without configuration file_ it is also possible to achieve the same functionality as `build-z`. For that, invoke
+Rollup like this:
+
+```shell
+rollup -c node:@run-z/project-config/rollup.config.js
 ```
 
 [rollup]: https://rollupjs.org/

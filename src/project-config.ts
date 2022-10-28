@@ -21,11 +21,15 @@ export class ProjectConfig implements ProjectInit {
    * If no configuration module found, then new project configuration constructed.
    *
    * @param url - Configuration module specifier relative to current working dir. `./project.config.js` by default.
+   * @param updateInit - Optional customizer of initialization options.
    *
    * @returns Promise resolved to project configuration.
    */
-  static async load(url = './project.config.js'): Promise<ProjectConfig> {
-    return this.of(await loadConfig(process.cwd(), url, {}));
+  static async load(
+    url = './project.config.js',
+    updateInit?: (this: void, init: ProjectInit) => ProjectInit,
+  ): Promise<ProjectConfig> {
+    return this.of(await loadConfig(process.cwd(), url, {}), updateInit);
   }
 
   /**
@@ -40,21 +44,31 @@ export class ProjectConfig implements ProjectInit {
    * - Nothing. Project configuration is {@link ProjectConfig.load loaded} from default location in this case.
    *
    * @param spec - Project configuration specifier.
+   * @param updateInit - Optional customizer of initialization options.
    *
    * @returns Promise resolved to project configuration.
    */
-  static async of(spec?: ProjectSpec): Promise<ProjectConfig> {
+  static async of(
+    spec?: ProjectSpec,
+    updateInit?: (this: void, init: ProjectInit) => ProjectInit,
+  ): Promise<ProjectConfig> {
     if (spec == null || typeof spec === 'string') {
       return ProjectConfig.load(spec);
     }
+    if (spec instanceof ProjectConfig) {
+      return spec;
+    }
+    if (updateInit) {
+      spec = updateInit(spec);
+    }
 
-    return spec instanceof ProjectConfig ? spec : new ProjectConfig(spec);
+    return new ProjectConfig(spec);
   }
 
-  readonly #init: ProjectInit;
   readonly #rootDir: string;
   readonly #sourceDir: string;
   readonly #typescript: ProjectTypescript;
+  readonly #outInit: ProjectOutputInit;
   #output?: Promise<ProjectOutput>;
   #packageJson?: PackageJson;
   #exports?: Promise<ReadonlyMap<string, ProjectExport>>;
@@ -66,13 +80,12 @@ export class ProjectConfig implements ProjectInit {
    * @param init - Project initialization options.
    */
   constructor(init: ProjectInit = {}) {
-    this.#init = init;
-
     const { rootDir = process.cwd(), sourceDir = 'src', typescript } = init;
 
     this.#rootDir = path.resolve(rootDir);
     this.#sourceDir = path.resolve(rootDir, sourceDir);
     this.#typescript = new ProjectTypescript(this, typescript);
+    this.#outInit = init;
   }
 
   /**
@@ -103,7 +116,7 @@ export class ProjectConfig implements ProjectInit {
    */
   get output(): Promise<ProjectOutput> {
     if (!this.#output) {
-      this.#output = ProjectOutput.create(this, this.#init);
+      this.#output = ProjectOutput.create(this, this.#outInit);
     }
 
     return this.#output;
