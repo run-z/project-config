@@ -2,12 +2,12 @@ import { builtinModules } from 'node:module';
 import path from 'node:path';
 import { defineConfig } from 'rollup';
 import flatDts from 'rollup-plugin-flat-dts';
-import sourcemaps from 'rollup-plugin-sourcemaps';
 import ts from 'rollup-plugin-typescript2';
 import typescript from 'typescript';
 
 const externalModules = new Set(builtinModules);
 
+externalModules.add('deepmerge');
 externalModules.add('typescript');
 
 export default defineConfig({
@@ -15,32 +15,33 @@ export default defineConfig({
     'project-config': './src/mod.ts',
     'project-config.jest': './src/jest/mod.ts',
     'project-config.rollup': './src/rollup/mod.ts',
+    'rollup.config': './src/rollup.config.js/main.ts',
   },
   plugins: [
     ts({
       typescript,
       cacheRoot: 'target/.rts2_cache',
     }),
-    sourcemaps(),
   ],
   external(id) {
     return id.startsWith('node:') || externalModules.has(id) || id.startsWith('rollup');
-  },
-  manualChunks(id) {
-    if (id.startsWith(path.resolve('src', 'jest'))) {
-      return 'project-config.jest';
-    }
-    if (id.startsWith(path.resolve('src', 'rollup'))) {
-      return 'project-config.rollup';
-    }
-
-    return 'project-config';
   },
   output: {
     dir: 'dist',
     format: 'esm',
     sourcemap: true,
     entryFileNames: '[name].js',
+    chunkFileNames: '_[name].js',
+    manualChunks(id) {
+      if (id.startsWith(path.resolve('src', 'jest'))) {
+        return 'project-config.jest';
+      }
+      if (id.startsWith(path.resolve('src', 'rollup'))) {
+        return 'project-config.rollup';
+      }
+
+      return 'project-config';
+    },
     plugins: [
       flatDts({
         lib: true,

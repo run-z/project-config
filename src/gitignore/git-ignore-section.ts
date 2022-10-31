@@ -41,6 +41,17 @@ export abstract class GitIgnoreSection {
   }
 
   /**
+   * Iterates over entry patterns.
+   *
+   * @returns Iterable iterator of section entry patterns.
+   */
+  *patterns(): IterableIterator<string> {
+    for (const { pattern } of this.entries()) {
+      yield pattern;
+    }
+  }
+
+  /**
    * Iterates over section entries.
    *
    * @returns Iterable iterator of section entries.
@@ -51,7 +62,7 @@ export abstract class GitIgnoreSection {
    * Finds existing `.gitignore` file entry or creates new one.
    *
    * If entry already attached to another section, then the returned entry would reflect existing one, while its
-   * {@link GitIgnoreEntry#currentSection current section} would point to enother section. The returned entry will be
+   * {@link GitIgnoreEntry#currentSection current section} would point to another section. The returned entry will be
    * {@link GitIgnoreEntry#isDetached detached} in this case.
    *
    * The {@link GitIgnoreEntry#section section} of returned entry always returns to `this` section. The returned entry
@@ -62,6 +73,17 @@ export abstract class GitIgnoreSection {
    * @returns File entry.
    */
   abstract entry(pattern: string): GitIgnoreEntry;
+
+  /**
+   * Replaces entries of this section.
+   *
+   * Retains only entries added by the `build` function and removes the rest of them.
+   *
+   * @param build - Builds section entries.
+   *
+   * @returns `this` instance.
+   */
+  abstract replace(build: (section: this) => void): this;
 
   /**
    * Builds content of the section of file in `.gitignore` format.

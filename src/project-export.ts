@@ -153,7 +153,7 @@ async function ProjectExport$detectSourceFile(
   return await ProjectExport$findSourceFile(project, [...parts]);
 }
 
-const SOURCE_FILE_NAMES = [null, 'mod', 'main', 'index'];
+const SOURCE_FILE_NAMES = [null, 'main', 'mod', 'index'];
 const SOURCE_FILE_EXTENSIONS = ['.ts', '.mts', '.cts'];
 
 async function ProjectExport$findSourceFile(
