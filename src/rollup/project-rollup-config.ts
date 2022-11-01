@@ -20,7 +20,7 @@ export class ProjectRollupConfig {
   /**
    * Gains specified Rollup configuration of the project.
    *
-   * Utilizes {@link @run-z/project-config!:RollupToolsInit#rollup Rollup tool initializer}.
+   * Utilizes {@link @run-z/project-config!ProjectToolsInit#rollup Rollup tool initializer}.
    *
    * Rollup configuration can be specified by one of:
    *

@@ -1,12 +1,11 @@
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { ProjectJestSpec } from './jest/project-jest-config.js';
 import { PackageJson } from './package/package-json.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
-import { ProjectRollupSpec } from './rollup/project-rollup-config.js';
+import { ProjectToolsInit } from './project-tools-init.js';
 import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-typescript.js';
 
 /**
@@ -230,24 +229,9 @@ export interface ProjectInit extends ProjectOutputInit {
   readonly typescript?: ProjectTypescriptInit;
 
   /**
-   * Initializers of this project's development tools.
+   * Development tools initializers for the project.
    */
   readonly tools?: ProjectToolsInit | undefined;
-}
-
-/**
- * Initializers of project's development tools.
- */
-export interface ProjectToolsInit {
-  /**
-   * {@link @run-z/project-config/jest!ProjectJestConfig.of Specifier} of Jest configuration of the project.
-   */
-  readonly jest?: ProjectJestSpec;
-
-  /**
-   * {@link @run-z/project-config/rollup!ProjectRollupConfig.of Specifier} of Rollup configuration of the project.
-   */
-  readonly rollup?: ProjectRollupSpec;
 }
 
 async function loadConfig<TConfig>(
