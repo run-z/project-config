@@ -1,10 +1,12 @@
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
+import { ProjectJestSpec } from './jest/project-jest-config.js';
 import { PackageJson } from './package/package-json.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
+import { ProjectRollupSpec } from './rollup/project-rollup-config.js';
 import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-typescript.js';
 
 /**
@@ -49,6 +51,7 @@ export class ProjectConfig implements ProjectInit {
     return new ProjectConfig(spec);
   }
 
+  readonly #tools: ProjectToolsInit;
   readonly #rootDir: string;
   readonly #sourceDir: string;
   readonly #typescript: ProjectTypescript;
@@ -64,8 +67,9 @@ export class ProjectConfig implements ProjectInit {
    * @param init - Project initialization options.
    */
   constructor(init: ProjectInit = {}) {
-    const { rootDir = process.cwd(), sourceDir = 'src', typescript } = init;
+    const { tools = {}, rootDir = process.cwd(), sourceDir = 'src', typescript } = init;
 
+    this.#tools = tools;
     this.#rootDir = path.resolve(rootDir);
     this.#sourceDir = path.resolve(rootDir, sourceDir);
     this.#typescript = new ProjectTypescript(this, typescript);
@@ -79,6 +83,10 @@ export class ProjectConfig implements ProjectInit {
    */
   get project(): this {
     return this;
+  }
+
+  get tools(): ProjectToolsInit {
+    return this.#tools;
   }
 
   /**
@@ -220,6 +228,26 @@ export interface ProjectInit extends ProjectOutputInit {
    * @defaultValue Loaded from `tsconfig.json`.
    */
   readonly typescript?: ProjectTypescriptInit;
+
+  /**
+   * Initializers of this project's development tools.
+   */
+  readonly tools?: ProjectToolsInit | undefined;
+}
+
+/**
+ * Initializers of project's development tools.
+ */
+export interface ProjectToolsInit {
+  /**
+   * {@link @run-z/project-config/jest!ProjectJestConfig.of Specifier} of Jest configuration of the project.
+   */
+  readonly jest?: ProjectJestSpec;
+
+  /**
+   * {@link @run-z/project-config/rollup!ProjectRollupConfig.of Specifier} of Rollup configuration of the project.
+   */
+  readonly rollup?: ProjectRollupSpec;
 }
 
 async function loadConfig<TConfig>(

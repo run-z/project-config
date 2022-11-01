@@ -20,6 +20,8 @@ export class ProjectRollupConfig {
   /**
    * Gains specified Rollup configuration of the project.
    *
+   * Utilizes {@link @run-z/project-config!:RollupToolsInit#rollup Rollup tool initializer}.
+   *
    * Rollup configuration can be specified by one of:
    *
    * - Rollup configuration instance, which is returned as is.
@@ -37,7 +39,21 @@ export class ProjectRollupConfig {
       return spec;
     }
 
-    return new ProjectRollupConfig(project, spec);
+    const projectConfig = ProjectConfig.of(project);
+    const { rollup } = projectConfig.tools;
+
+    if (rollup) {
+      const config =
+        rollup instanceof ProjectRollupConfig
+          ? rollup
+          : new ProjectRollupConfig(projectConfig, rollup);
+
+      config.extendOptions(...RollupOptions$asArray(spec));
+
+      return config;
+    }
+
+    return new ProjectRollupConfig(projectConfig, spec);
   }
 
   readonly #project: ProjectConfig;
@@ -306,10 +322,18 @@ export class ProjectRollupConfig {
 
 /**
  * {@link ProjectRollupConfig.of Specifier} of Rollup configuration of the project.
- *
- * @typeParam TProject - Type of project configuration specifier.
  */
-export type ProjectRollupSpec = ProjectRollupConfig | RollupOptions | undefined;
+export type ProjectRollupSpec =
+  | ProjectRollupConfig
+  | RollupOptions
+  | readonly RollupOptions[]
+  | undefined;
+
+function RollupOptions$asArray(
+  options: RollupOptions | readonly RollupOptions[] | undefined,
+): readonly RollupOptions[] {
+  return options ? (Array.isArray(options) ? options : [options]) : [];
+}
 
 async function RollupOptions$extendAll(
   base: RollupOptions[],

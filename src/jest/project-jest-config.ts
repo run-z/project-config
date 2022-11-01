@@ -12,6 +12,8 @@ export class ProjectJestConfig {
   /**
    * Gains specified configuration of project tests utilizing Jest.
    *
+   * Utilizes {@link @run-z/project-config!:RollupToolsInit#jest Jest tool initializer}.
+   *
    * Jest configuration can be specified by one of:
    *
    * - Jest configuration instance, which is returned as is.
@@ -29,7 +31,21 @@ export class ProjectJestConfig {
       return spec;
     }
 
-    return new ProjectJestConfig(project, spec);
+    const projectConfig = ProjectConfig.of(project);
+    const { jest } = projectConfig.tools;
+
+    if (jest) {
+      const config =
+        jest instanceof ProjectJestConfig ? jest : new ProjectJestConfig(projectConfig, jest);
+
+      if (spec) {
+        config.extendOptions(spec);
+      }
+
+      return config;
+    }
+
+    return new ProjectJestConfig(projectConfig, spec);
   }
 
   readonly #project: ProjectConfig;
