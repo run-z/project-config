@@ -5,6 +5,7 @@ import { PackageJson } from './package/package-json.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
+import { ProjectToolsInit } from './project-tools-init.js';
 import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-typescript.js';
 
 /**
@@ -15,21 +16,17 @@ export class ProjectConfig implements ProjectInit {
   /**
    * Loads project configuration from specified module.
    *
-   * The default export of target ESM module treated as {@link ProjectConfig.of project initializer}, i.e. either as
+   * The default export of target ESM module treated as {@link ProjectConfig.of project specifier}, i.e. either as
    * project configuration instance, or its initialization options.
    *
-   * If no configuration module found, then new project configuration constructed.
+   * If no configuration module found, then new project configuration created.
    *
    * @param url - Configuration module specifier relative to current working dir. `./project.config.js` by default.
-   * @param updateInit - Optional customizer of initialization options.
    *
    * @returns Promise resolved to project configuration.
    */
-  static async load(
-    url = './project.config.js',
-    updateInit?: (this: void, init: ProjectInit) => ProjectInit,
-  ): Promise<ProjectConfig> {
-    return this.of(await loadConfig(process.cwd(), url, {}), updateInit);
+  static async load(url = './project.config.js'): Promise<ProjectConfig> {
+    return this.of(await loadConfig(process.cwd(), url, {}));
   }
 
   /**
@@ -39,32 +36,21 @@ export class ProjectConfig implements ProjectInit {
    *
    * - Project configuration instance, which is returned as is.
    * - Project initialization options. New project configuration created in this case.
-   * - Configuration module specifier. Project configuration is {@link ProjectConfig.load loaded} from that module
-   *   in this case.
-   * - Nothing. Project configuration is {@link ProjectConfig.load loaded} from default location in this case.
+   * - Nothing to create default configuration.
    *
    * @param spec - Project configuration specifier.
-   * @param updateInit - Optional customizer of initialization options.
    *
-   * @returns Promise resolved to project configuration.
+   * @returns Project configuration instance.
    */
-  static async of(
-    spec?: ProjectSpec,
-    updateInit?: (this: void, init: ProjectInit) => ProjectInit,
-  ): Promise<ProjectConfig> {
-    if (spec == null || typeof spec === 'string') {
-      return ProjectConfig.load(spec);
-    }
+  static of(spec?: ProjectSpec): ProjectConfig {
     if (spec instanceof ProjectConfig) {
       return spec;
-    }
-    if (updateInit) {
-      spec = updateInit(spec);
     }
 
     return new ProjectConfig(spec);
   }
 
+  readonly #tools: ProjectToolsInit;
   readonly #rootDir: string;
   readonly #sourceDir: string;
   readonly #typescript: ProjectTypescript;
@@ -80,8 +66,9 @@ export class ProjectConfig implements ProjectInit {
    * @param init - Project initialization options.
    */
   constructor(init: ProjectInit = {}) {
-    const { rootDir = process.cwd(), sourceDir = 'src', typescript } = init;
+    const { tools = {}, rootDir = process.cwd(), sourceDir = 'src', typescript } = init;
 
+    this.#tools = tools;
     this.#rootDir = path.resolve(rootDir);
     this.#sourceDir = path.resolve(rootDir, sourceDir);
     this.#typescript = new ProjectTypescript(this, typescript);
@@ -95,6 +82,10 @@ export class ProjectConfig implements ProjectInit {
    */
   get project(): this {
     return this;
+  }
+
+  get tools(): ProjectToolsInit {
+    return this.#tools;
   }
 
   /**
@@ -210,7 +201,7 @@ export class ProjectConfig implements ProjectInit {
 /**
  * Project configuration {@link ProjectConfig.of specifier}.
  */
-export type ProjectSpec = ProjectConfig | ProjectInit | string | undefined;
+export type ProjectSpec = ProjectConfig | ProjectInit | undefined;
 
 /**
  * Project initialization options.
@@ -236,6 +227,11 @@ export interface ProjectInit extends ProjectOutputInit {
    * @defaultValue Loaded from `tsconfig.json`.
    */
   readonly typescript?: ProjectTypescriptInit;
+
+  /**
+   * Development tools initializers for the project.
+   */
+  readonly tools?: ProjectToolsInit | undefined;
 }
 
 async function loadConfig<TConfig>(
