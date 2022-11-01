@@ -74,9 +74,7 @@ generated options and extend them, the `rollup.config.js` may like this:
 import { configureRollup } from '@run-z/project-config/rollup`;
 
 export default await configureRollup({
-  options: {
-    // ...Options to add on top of automatically generated one.
-  },
+  // ...Options to apply on top of automatically generated ones.
 });
 ```
 

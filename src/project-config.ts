@@ -15,21 +15,17 @@ export class ProjectConfig implements ProjectInit {
   /**
    * Loads project configuration from specified module.
    *
-   * The default export of target ESM module treated as {@link ProjectConfig.of project initializer}, i.e. either as
+   * The default export of target ESM module treated as {@link ProjectConfig.of project specifier}, i.e. either as
    * project configuration instance, or its initialization options.
    *
-   * If no configuration module found, then new project configuration constructed.
+   * If no configuration module found, then new project configuration created.
    *
    * @param url - Configuration module specifier relative to current working dir. `./project.config.js` by default.
-   * @param updateInit - Optional customizer of initialization options.
    *
    * @returns Promise resolved to project configuration.
    */
-  static async load(
-    url = './project.config.js',
-    updateInit?: (this: void, init: ProjectInit) => ProjectInit,
-  ): Promise<ProjectConfig> {
-    return this.of(await loadConfig(process.cwd(), url, {}), updateInit);
+  static async load(url = './project.config.js'): Promise<ProjectConfig> {
+    return this.of(await loadConfig(process.cwd(), url, {}));
   }
 
   /**
@@ -39,27 +35,15 @@ export class ProjectConfig implements ProjectInit {
    *
    * - Project configuration instance, which is returned as is.
    * - Project initialization options. New project configuration created in this case.
-   * - Configuration module specifier. Project configuration is {@link ProjectConfig.load loaded} from that module
-   *   in this case.
-   * - Nothing. Project configuration is {@link ProjectConfig.load loaded} from default location in this case.
+   * - Nothing to create default configuration.
    *
    * @param spec - Project configuration specifier.
-   * @param updateInit - Optional customizer of initialization options.
    *
-   * @returns Promise resolved to project configuration.
+   * @returns Project configuration instance.
    */
-  static async of(
-    spec?: ProjectSpec,
-    updateInit?: (this: void, init: ProjectInit) => ProjectInit,
-  ): Promise<ProjectConfig> {
-    if (spec == null || typeof spec === 'string') {
-      return ProjectConfig.load(spec);
-    }
+  static of(spec?: ProjectSpec): ProjectConfig {
     if (spec instanceof ProjectConfig) {
       return spec;
-    }
-    if (updateInit) {
-      spec = updateInit(spec);
     }
 
     return new ProjectConfig(spec);
@@ -210,7 +194,7 @@ export class ProjectConfig implements ProjectInit {
 /**
  * Project configuration {@link ProjectConfig.of specifier}.
  */
-export type ProjectSpec = ProjectConfig | ProjectInit | string | undefined;
+export type ProjectSpec = ProjectConfig | ProjectInit | undefined;
 
 /**
  * Project initialization options.
