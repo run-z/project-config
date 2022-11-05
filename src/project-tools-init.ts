@@ -1,5 +1,5 @@
 import { ProjectJestSpec } from './jest/project-jest-config.js';
-import { ProjectPackageSpec } from './project-package.js';
+import { ProjectPackageSpec } from './package/project-package.js';
 import { ProjectRollupSpec } from './rollup/project-rollup-config.js';
 
 /**

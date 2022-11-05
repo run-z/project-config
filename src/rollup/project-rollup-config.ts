@@ -5,9 +5,9 @@ import { rollup, RollupOptions, RollupOutput } from 'rollup';
 import flatDts from 'rollup-plugin-flat-dts';
 import ts from 'rollup-plugin-typescript2';
 import typescript from 'typescript';
+import { ProjectEntry } from '../package/project-entry.js';
+import { ProjectPackage } from '../package/project-package.js';
 import { ProjectConfig, ProjectSpec } from '../project-config.js';
-import { ProjectEntry } from '../project-entry.js';
-import { ProjectPackage } from '../project-package.js';
 import {
   ProjectRollupPlugin$create,
   ProjectRollupPlugin$get,

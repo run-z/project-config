@@ -1,9 +1,9 @@
 import { Stats } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { ProjectConfig } from './project-config.js';
+import { ProjectConfig } from '../project-config.js';
+import { ProjectOutput } from '../project-output.js';
 import { ProjectEntry } from './project-entry.js';
-import { ProjectOutput } from './project-output.js';
 import { PackageJson, ProjectPackage } from './project-package.js';
 
 /**

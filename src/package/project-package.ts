@@ -1,7 +1,7 @@
 import deepmerge from 'deepmerge';
 import module from 'node:module';
 import path from 'node:path';
-import { ProjectConfig, ProjectSpec } from './project-config.js';
+import { ProjectConfig, ProjectSpec } from '../project-config.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
 

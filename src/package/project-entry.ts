@@ -1,7 +1,7 @@
 import path from 'node:path';
-import { ProjectConfig } from './project-config.js';
+import { ProjectConfig } from '../project-config.js';
+import { ProjectOutput } from '../project-output.js';
 import { ProjectExport } from './project-export.js';
-import { ProjectOutput } from './project-output.js';
 
 /**
  * Abstract project entry configuration.
