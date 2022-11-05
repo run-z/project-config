@@ -1,4 +1,3 @@
-import deepmerge from 'deepmerge';
 import path from 'node:path';
 import { RawCompilerOptions } from 'ts-jest';
 import ts from 'typescript';
@@ -230,7 +229,7 @@ export class ProjectTypescriptConfig {
   extendOptions(extension: RawCompilerOptions): this {
     const prevOptions = this.#customOptions;
 
-    this.#customOptions = () => deepmerge(prevOptions(), extension);
+    this.#customOptions = () => ({ ...prevOptions(), ...extension });
 
     return this.#rebuild();
   }
