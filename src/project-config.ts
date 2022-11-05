@@ -1,9 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { PackageJson } from './package/package-json.js';
-import { ProjectEntry } from './project-entry.js';
-import { ProjectExport } from './project-export.js';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
 import { ProjectToolsInit } from './project-tools-init.js';
 import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-typescript.js';
@@ -55,10 +52,8 @@ export class ProjectConfig implements ProjectInit {
   readonly #sourceDir: string;
   readonly #typescript: ProjectTypescript;
   readonly #outInit: ProjectOutputInit;
+  readonly #values = new Map<object, unknown>();
   #output?: Promise<ProjectOutput>;
-  #packageJson?: PackageJson;
-  #exports?: Promise<ReadonlyMap<string, ProjectExport>>;
-  #mainEntry?: Promise<ProjectEntry>;
 
   /**
    * Constructs project configuration.
@@ -114,13 +109,6 @@ export class ProjectConfig implements ProjectInit {
   }
 
   /**
-   * `package.json` contents.
-   */
-  get packageJson(): PackageJson {
-    return (this.#packageJson ||= new PackageJson(this));
-  }
-
-  /**
    * TypeScript configuration of the project.
    */
   get typescript(): ProjectTypescript {
@@ -128,44 +116,24 @@ export class ProjectConfig implements ProjectInit {
   }
 
   /**
-   * Promise resolved to the main entry of the project.
+   * Gains value of the given `kind` or creates one if not yet exists.
+   *
+   * Caches the value once constructed.
+   *
+   * @param kind - Kind of values to gain. This function is used as a cache key. It is called to create
+   *
+   * @returns Gained value.
    */
-  get mainEntry(): Promise<ProjectEntry> {
-    if (!this.#mainEntry) {
-      this.#mainEntry = this.#findMainEntry();
+  get<T>(kind: (this: void, project: ProjectConfig) => T): T {
+    if (this.#values.has(kind)) {
+      return this.#values.get(kind) as T;
     }
 
-    return this.#mainEntry;
-  }
+    const created = kind(this);
 
-  async #findMainEntry(): Promise<ProjectEntry> {
-    const entries = await this.entries;
+    this.#values.set(kind, created);
 
-    for (const entry of entries.values()) {
-      if (entry.isMain) {
-        return entry;
-      }
-    }
-
-    throw new ReferenceError('No main entry');
-  }
-
-  /**
-   * Promise resolved to project entries map with their {@link ProjectEntry.name names} as keys.
-   */
-  get entries(): Promise<ReadonlyMap<string, ProjectEntry>> {
-    return this.exports;
-  }
-
-  /**
-   * Promise resolved to project exports map with their {@link ProjectEntry.name names} as keys.
-   */
-  get exports(): Promise<ReadonlyMap<string, ProjectExport>> {
-    if (!this.#exports) {
-      this.#exports = this.#loadExports();
-    }
-
-    return this.#exports;
+    return created;
   }
 
   /**
@@ -182,18 +150,6 @@ export class ProjectConfig implements ProjectInit {
    */
   async loadConfig<TConfig>(url: string, defaultConfig?: TConfig): Promise<TConfig> {
     return await loadConfig(this.rootDir, url, defaultConfig);
-  }
-
-  async #loadExports(): Promise<ReadonlyMap<string, ProjectExport>> {
-    const entries = await Promise.all(
-      [...this.packageJson.entryPoints.values()].map(async entryPoint => {
-        const entry = await ProjectExport.create(this, { entryPoint });
-
-        return entry ? ([entry.name, entry] as const) : undefined;
-      }),
-    );
-
-    return new Map(entries.filter(entry => !!entry) as (readonly [string, ProjectExport])[]);
   }
 
 }
