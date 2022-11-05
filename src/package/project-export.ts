@@ -1,10 +1,10 @@
 import { Stats } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { PackageJson } from './package/package-json.js';
-import { ProjectConfig } from './project-config.js';
+import { ProjectConfig } from '../project-config.js';
+import { ProjectOutput } from '../project-output.js';
 import { ProjectEntry } from './project-entry.js';
-import { ProjectOutput } from './project-output.js';
+import { PackageJson, ProjectPackage } from './project-package.js';
 
 /**
  * Project entry corresponding to {@link PackageJson.EntryPoint package export}.
@@ -14,7 +14,7 @@ export class ProjectExport extends ProjectEntry {
   /**
    * Tries to create project entry.
    *
-   * @param project - Target project configuration.
+   * @param projectPackage - Project package configuration.
    * @param init - Export initialization options.
    *
    * @returns Promise resolved either to project export instance, or to `undefined` if source file unspecified
@@ -22,10 +22,11 @@ export class ProjectExport extends ProjectEntry {
    */
   static async create(
     this: void,
-    project: ProjectConfig,
+    projectPackage: ProjectPackage,
     init: ProjectExportInit = {},
   ): Promise<ProjectExport | undefined> {
-    const { entryPoint = project.packageJson.entryPoints.get('.') } = init;
+    const entryPoints = await projectPackage.entryPoints;
+    const { entryPoint = entryPoints.get('.') } = init;
 
     if (!entryPoint) {
       return;
@@ -38,10 +39,11 @@ export class ProjectExport extends ProjectEntry {
       return;
     }
 
-    const output = await project.output;
+    const output = await projectPackage.project.output;
     const distFile = path.relative(output.distDir, distFilePath);
 
-    const { sourceFile = await ProjectExport$detectSourceFile(project, distFile) } = init;
+    const { sourceFile = await ProjectExport$detectSourceFile(projectPackage.project, distFile) } =
+      init;
 
     if (!sourceFile) {
       return;
