@@ -32,6 +32,8 @@ export class ProjectPackage {
   /**
    * Gains package configuration by its specifier.
    *
+   * Utilizes {@link ProjectToolsInit#package package initializer}.
+   *
    * Project package configuration can be specified by one of:
    *
    * - Package configuration instance returned as is.

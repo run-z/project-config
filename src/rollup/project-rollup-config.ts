@@ -8,6 +8,7 @@ import typescript from 'typescript';
 import { ProjectEntry } from '../package/project-entry.js';
 import { ProjectPackage } from '../package/project-package.js';
 import { ProjectConfig, ProjectSpec } from '../project-config.js';
+import { ProjectTypescriptConfig } from '../typescript/project-typescript-config.js';
 import {
   ProjectRollupPlugin$create,
   ProjectRollupPlugin$get,
@@ -222,7 +223,7 @@ export class ProjectRollupConfig {
       return [`${entryDir}/${path.sep}`, `_${name}.js`];
     });
 
-    const { tsconfig, compilerOptions, tscOptions } = this.project.typescript;
+    const tsConfig = ProjectTypescriptConfig.of(this.project);
 
     return {
       input: Object.fromEntries(
@@ -232,8 +233,7 @@ export class ProjectRollupConfig {
         ProjectRollupPlugin$create(this),
         ts({
           typescript,
-          tsconfig,
-          tsconfigOverride: compilerOptions,
+          tsconfigOverride: tsConfig.options,
           cacheRoot: path.join(cacheDir, 'rts2'),
         }),
       ],
@@ -260,9 +260,9 @@ export class ProjectRollupConfig {
         },
         plugins: [
           flatDts({
-            tsconfig,
+            tsconfig: 'tsconfig.dts.json',
             compilerOptions: {
-              ...tscOptions,
+              ...tsConfig.tscOptions,
               declarationMap: true,
             },
             lib: true,

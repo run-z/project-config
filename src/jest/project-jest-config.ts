@@ -3,6 +3,7 @@ import deepmerge from 'deepmerge';
 import path from 'node:path';
 import process from 'node:process';
 import { ProjectConfig, ProjectSpec } from '../project-config.js';
+import { ProjectTypescriptConfig } from '../typescript/project-typescript-config.js';
 
 function ProjectJestConfig$create(
   this: void,
@@ -215,10 +216,11 @@ export class ProjectJestConfig {
       transform: { ...customOptions.transform },
     };
 
+    const typescript = ProjectTypescriptConfig.of(this.project);
+
     if (config.preset == null) {
       if (swc) {
-        const { experimentalDecorators, emitDecoratorMetadata } =
-          this.#project.typescript.compilerOptions;
+        const { experimentalDecorators, emitDecoratorMetadata } = typescript.options;
 
         config.transform['^.+\\.(t|j)sx?$'] = [
           '@swc/jest',
@@ -245,7 +247,7 @@ export class ProjectJestConfig {
           'ts-jest',
           {
             tsconfig: {
-              ...this.#project.typescript.compilerOptions,
+              ...typescript.options,
               esModuleInterop: true,
               noUnusedLocals: false,
               noUnusedParameters: false,

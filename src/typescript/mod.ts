@@ -1,1 +1,1 @@
-export * from './project-typescript.js';
+export * from './project-typescript-config.js';

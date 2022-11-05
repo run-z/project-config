@@ -3,7 +3,6 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
 import { ProjectToolsInit } from './project-tools-init.js';
-import { ProjectTypescript, ProjectTypescriptInit } from './typescript/project-typescript.js';
 
 /**
  * Project configuration.
@@ -50,7 +49,6 @@ export class ProjectConfig implements ProjectInit {
   readonly #tools: ProjectToolsInit;
   readonly #rootDir: string;
   readonly #sourceDir: string;
-  readonly #typescript: ProjectTypescript;
   readonly #outInit: ProjectOutputInit;
   readonly #values = new Map<object, unknown>();
   #output?: Promise<ProjectOutput>;
@@ -61,12 +59,11 @@ export class ProjectConfig implements ProjectInit {
    * @param init - Project initialization options.
    */
   constructor(init: ProjectInit = {}) {
-    const { tools = {}, rootDir = process.cwd(), sourceDir = 'src', typescript } = init;
+    const { tools = {}, rootDir = process.cwd(), sourceDir = 'src' } = init;
 
     this.#tools = tools;
     this.#rootDir = path.resolve(rootDir);
     this.#sourceDir = path.resolve(rootDir, sourceDir);
-    this.#typescript = new ProjectTypescript(this, typescript);
     this.#outInit = init;
   }
 
@@ -106,13 +103,6 @@ export class ProjectConfig implements ProjectInit {
     }
 
     return this.#output;
-  }
-
-  /**
-   * TypeScript configuration of the project.
-   */
-  get typescript(): ProjectTypescript {
-    return this.#typescript;
   }
 
   /**
@@ -176,13 +166,6 @@ export interface ProjectInit extends ProjectOutputInit {
    * @defaultValue `src`.
    */
   readonly sourceDir?: string | undefined;
-
-  /**
-   * TypeScript initialization options.
-   *
-   * @defaultValue Loaded from `tsconfig.json`.
-   */
-  readonly typescript?: ProjectTypescriptInit;
 
   /**
    * Development tools initializers for the project.
