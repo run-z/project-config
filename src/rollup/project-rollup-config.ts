@@ -260,7 +260,7 @@ export class ProjectRollupConfig {
         },
         plugins: [
           flatDts({
-            tsconfig: 'tsconfig.dts.json',
+            tsconfig: tsConfig.tsconfig || undefined,
             compilerOptions: {
               ...tsConfig.tscOptions,
               declarationMap: true,
