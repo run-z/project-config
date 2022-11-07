@@ -42,7 +42,7 @@ export class ProjectTypescriptConfig {
    *   New TypeScript configuration created in this case.
    * - Nothing to create default configuration.
    *
-   * @param project - Configured project {@link @run-z/project-config!ProjectConfig.of specifier}.
+   * @param project - Configured project {@link ProjectConfig.of specifier}.
    * @param spec - TypeScript configuration specifier.
    *
    * @returns TypeScript configuration instance.
@@ -69,7 +69,7 @@ export class ProjectTypescriptConfig {
   /**
    * Constructs TypeScript configuration.
    *
-   * @param project - Configured project specifier.
+   * @param project - Configured project {@link ProjectConfig.of specifier}.
    * @param options - TypeScript compiler options.
    */
   constructor(project?: ProjectSpec, options: RawCompilerOptions = {}) {

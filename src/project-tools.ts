@@ -27,7 +27,7 @@ type ProjectToolType<TInit extends ((project: ProjectConfig) => object) | object
  */
 export interface ProjectToolsInit {
   /**
-   * {@link @run-z/project-config/jest!ProjectJestConfig.of Specifier} of Jest configuration of the project.
+   * {@link ProjectJestConfig.of Specifier} of Jest configuration of the project.
    */
   readonly jest?: ProjectJestSpec | ((project: ProjectConfig) => ProjectJestConfig);
 
@@ -37,7 +37,7 @@ export interface ProjectToolsInit {
   readonly package?: ProjectPackageSpec | ((project: ProjectConfig) => ProjectPackage);
 
   /**
-   * {@link @run-z/project-config/rollup!ProjectRollupConfig.of Specifier} of Rollup configuration of the project.
+   * {@link ProjectRollupConfig.of Specifier} of Rollup configuration of the project.
    */
   readonly rollup?: ProjectRollupSpec | ((project: ProjectConfig) => ProjectRollupConfig);
 

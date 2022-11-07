@@ -5,7 +5,7 @@ import { ProjectRollupConfig, ProjectRollupSpec } from './project-rollup-config.
 /**
  * Configures Rollup for the project.
  *
- * {@link @run-z/project-config!ProjectConfig.load Loads} project configuration first.
+ * {@link ProjectConfig.load Loads} project configuration first.
  *
  * @param spec - Rollup configuration {@link ProjectRollupConfig.of specifier}.
  *

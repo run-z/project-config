@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-import { ProjectConfig } from '@run-z/project-config';
-import { ProjectRollupConfig } from '@run-z/project-config/rollup';
+import { ProjectConfig, ProjectRollupConfig } from '@run-z/project-config';
 import process from 'node:process';
 
 const project = await ProjectConfig.load();
