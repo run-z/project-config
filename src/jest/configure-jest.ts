@@ -1,4 +1,4 @@
-import { Config } from '@jest/types';
+import { type Config } from '@jest/types';
 import { ProjectConfig } from '../project-config.js';
 import { ProjectJestConfig, ProjectJestSpec } from './project-jest-config.js';
 

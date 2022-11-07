@@ -1,4 +1,4 @@
-import { Config } from '@jest/types';
+import { type Config } from '@jest/types';
 import deepmerge from 'deepmerge';
 import path from 'node:path';
 import process from 'node:process';
