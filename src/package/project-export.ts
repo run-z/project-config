@@ -3,8 +3,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ProjectConfig } from '../project-config.js';
 import { ProjectOutput } from '../project-output.js';
+import { PackageJson } from './package.json';
 import { ProjectEntry } from './project-entry.js';
-import { PackageJson, ProjectPackage } from './project-package.js';
+import { ProjectPackage } from './project-package.js';
 
 /**
  * Project entry corresponding to {@link PackageJson.EntryPoint package export}.
