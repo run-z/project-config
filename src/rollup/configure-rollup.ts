@@ -1,4 +1,4 @@
-import { RollupOptions } from 'rollup';
+import { type RollupOptions } from 'rollup';
 import { ProjectConfig } from '../project-config.js';
 import { ProjectRollupConfig, ProjectRollupSpec } from './project-rollup-config.js';
 
