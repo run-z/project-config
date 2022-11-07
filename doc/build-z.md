@@ -4,7 +4,7 @@
 
 1. Add `rollup` to dev dependencies of the project:
    ```shell
-   npm add rollup
+   npm add -D rollup
    ```
 2. Adjust `package.json` scripts:
    ```json
@@ -83,7 +83,7 @@ Invoking `build-z` is the same as invoking `rollup -c node:@run-z/project-config
 [Rollup configuration file][] (`rollup.config.js`) can also be used. It is used by Rollup when invoking `rollup -c`.
 
 Options added to configuration file passed to Rollup instead of automatically generated ones. To use automatically
-generated options and extend them, the `rollup.config.js` may like this:
+generated options and extend them, the `rollup.config.js` may look like this:
 
 ```javascript
 import { configureRollup } from '@run-z/project-config`;
