@@ -1,4 +1,4 @@
-import { InputOptions, InputPluginOption, Plugin } from 'rollup';
+import type { InputOptions, InputPluginOption, Plugin } from 'rollup';
 import { ProjectRollupConfig } from './project-rollup-config.js';
 
 const ProjectRollupPlugin$name = '@run-z/project-config' as const;

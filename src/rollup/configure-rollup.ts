@@ -1,11 +1,11 @@
-import { RollupOptions } from 'rollup';
+import { type RollupOptions } from 'rollup';
 import { ProjectConfig } from '../project-config.js';
 import { ProjectRollupConfig, ProjectRollupSpec } from './project-rollup-config.js';
 
 /**
  * Configures Rollup for the project.
  *
- * {@link @run-z/project-config!ProjectConfig.load Loads} project configuration first.
+ * {@link ProjectConfig.load Loads} project configuration first.
  *
  * @param spec - Rollup configuration {@link ProjectRollupConfig.of specifier}.
  *

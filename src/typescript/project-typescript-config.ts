@@ -1,6 +1,6 @@
 import path from 'node:path';
-import { RawCompilerOptions } from 'ts-jest';
-import ts from 'typescript';
+import { type RawCompilerOptions } from 'ts-jest';
+import type ts from 'typescript';
 import { ProjectConfig, ProjectSpec } from '../project-config.js';
 
 function ProjectTypescriptConfig$create(
@@ -42,7 +42,7 @@ export class ProjectTypescriptConfig {
    *   New TypeScript configuration created in this case.
    * - Nothing to create default configuration.
    *
-   * @param project - Configured project {@link @run-z/project-config!ProjectConfig.of specifier}.
+   * @param project - Configured project {@link ProjectConfig.of specifier}.
    * @param spec - TypeScript configuration specifier.
    *
    * @returns TypeScript configuration instance.
@@ -60,15 +60,16 @@ export class ProjectTypescriptConfig {
   }
 
   readonly #project: ProjectConfig;
+  #typescript?: Promise<typeof ts>;
   #tsconfig: string | null = 'tsconfig.json';
   #customOptions: () => RawCompilerOptions;
-  #options?: RawCompilerOptions;
-  #tscOptions?: ts.CompilerOptions;
+  #options?: Promise<RawCompilerOptions>;
+  #tscOptions?: Promise<ts.CompilerOptions>;
 
   /**
    * Constructs TypeScript configuration.
    *
-   * @param project - Configured project specifier.
+   * @param project - Configured project {@link ProjectConfig.of specifier}.
    * @param options - TypeScript compiler options.
    */
   constructor(project?: ProjectSpec, options: RawCompilerOptions = {}) {
@@ -88,6 +89,13 @@ export class ProjectTypescriptConfig {
   }
 
   /**
+   * TypeScript API instance.
+   */
+  get typescript(): Promise<typeof ts> {
+    return (this.#typescript ??= import('typescript').then(ts => ts.default));
+  }
+
+  /**
    * TypeScript's configuration file path relative to {@link ProjectConfig.rootDir project root}.
    *
    * `null` to ignore configuration files.
@@ -99,17 +107,18 @@ export class ProjectTypescriptConfig {
   /**
    * TypeScript compiler options.
    */
-  get options(): RawCompilerOptions {
+  get options(): Promise<RawCompilerOptions> {
     return (this.#options ??= this.#toOptions());
   }
 
-  #toOptions(): RawCompilerOptions {
+  async #toOptions(): Promise<RawCompilerOptions> {
     const customOptions = this.#customOptions();
 
     if (this.tsconfig == null) {
       return customOptions;
     }
 
+    const ts = await this.typescript;
     const tsconfig = path.resolve(this.#project.rootDir, this.tsconfig);
     const { config = {}, error } = ts.readConfigFile(tsconfig, ts.sys.readFile) as {
       config?: { compilerOptions?: RawCompilerOptions };
@@ -117,25 +126,26 @@ export class ProjectTypescriptConfig {
     };
 
     if (error) {
-      console.error(ts.formatDiagnosticsWithColorAndContext([error], this.#errorFormatHost()));
+      console.error(ts.formatDiagnosticsWithColorAndContext([error], this.#errorFormatHost(ts)));
 
       throw new Error(`Can not parse TypeScript configuration: ${this.#tsconfig}`);
     }
 
-    return (this.#options = {
+    return {
       ...config.compilerOptions,
       ...customOptions,
-    });
+    };
   }
 
   /**
    * TypeScript compiler options suitable for passing to TypeScript compiler API.
    */
-  get tscOptions(): ts.CompilerOptions {
+  get tscOptions(): Promise<ts.CompilerOptions> {
     return (this.#tscOptions ??= this.#toTscOptions());
   }
 
-  #toTscOptions(): ts.CompilerOptions {
+  async #toTscOptions(): Promise<ts.CompilerOptions> {
+    const ts = await this.typescript;
     const { options, errors } = ts.convertCompilerOptionsFromJson(
       this.options,
       this.project.rootDir,
@@ -143,7 +153,7 @@ export class ProjectTypescriptConfig {
     );
 
     if (errors.length) {
-      console.error(ts.formatDiagnosticsWithColorAndContext(errors, this.#errorFormatHost()));
+      console.error(ts.formatDiagnosticsWithColorAndContext(errors, this.#errorFormatHost(ts)));
 
       throw new Error(
         `Can not parse TypeScript compiler options: ${this.tsconfig || 'tsconfig.custom.json'}`,
@@ -153,11 +163,13 @@ export class ProjectTypescriptConfig {
     return options;
   }
 
-  #errorFormatHost(): ts.FormatDiagnosticsHost {
+  #errorFormatHost(typescript: typeof ts): ts.FormatDiagnosticsHost {
     return {
       getCurrentDirectory: () => this.#project.rootDir,
-      getNewLine: () => ts.sys.newLine,
-      getCanonicalFileName: ts.sys.useCaseSensitiveFileNames ? f => f : f => f.toLowerCase(),
+      getNewLine: () => typescript.sys.newLine,
+      getCanonicalFileName: typescript.sys.useCaseSensitiveFileNames
+        ? f => f
+        : f => f.toLowerCase(),
     };
   }
 

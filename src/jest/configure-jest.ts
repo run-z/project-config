@@ -1,11 +1,11 @@
-import { Config } from '@jest/types';
+import { type Config } from '@jest/types';
 import { ProjectConfig } from '../project-config.js';
 import { ProjectJestConfig, ProjectJestSpec } from './project-jest-config.js';
 
 /**
  * Configures Jest tests for the project.
  *
- * {@link @run-z/project-config!ProjectConfig.load Loads} project configuration first.
+ * {@link ProjectConfig.load Loads} project configuration first.
  *
  * @param spec - Jest configuration {@link ProjectJestConfig.of specifier}.
  *

@@ -86,7 +86,7 @@ Options added to configuration file passed to Rollup instead of automatically ge
 generated options and extend them, the `rollup.config.js` may like this:
 
 ```javascript
-import { configureRollup } from '@run-z/project-config/rollup`;
+import { configureRollup } from '@run-z/project-config`;
 
 export default await configureRollup({
   // ...Options to apply on top of automatically generated ones.
