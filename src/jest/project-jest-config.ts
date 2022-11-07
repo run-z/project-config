@@ -216,11 +216,11 @@ export class ProjectJestConfig {
       transform: { ...customOptions.transform },
     };
 
-    const typescript = ProjectTypescriptConfig.of(this.project);
+    const tsConfig = ProjectTypescriptConfig.of(this.project);
 
     if (config.preset == null) {
       if (swc) {
-        const { experimentalDecorators, emitDecoratorMetadata } = typescript.options;
+        const { experimentalDecorators, emitDecoratorMetadata } = await tsConfig.options;
 
         config.transform['^.+\\.(t|j)sx?$'] = [
           '@swc/jest',
@@ -247,7 +247,7 @@ export class ProjectJestConfig {
           'ts-jest',
           {
             tsconfig: {
-              ...typescript.options,
+              ...(await tsConfig.options),
               esModuleInterop: true,
               noUnusedLocals: false,
               noUnusedParameters: false,

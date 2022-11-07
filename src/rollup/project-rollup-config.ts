@@ -2,9 +2,6 @@ import deepmerge from 'deepmerge';
 import module from 'node:module';
 import path from 'node:path';
 import { rollup, RollupOptions, RollupOutput } from 'rollup';
-import flatDts from 'rollup-plugin-flat-dts';
-import ts from 'rollup-plugin-typescript2';
-import typescript from 'typescript';
 import { ProjectEntry } from '../package/project-entry.js';
 import { ProjectPackage } from '../package/project-package.js';
 import { ProjectConfig, ProjectSpec } from '../project-config.js';
@@ -224,6 +221,8 @@ export class ProjectRollupConfig {
     });
 
     const tsConfig = ProjectTypescriptConfig.of(this.project);
+    const { default: tsPlugin } = await import('rollup-plugin-typescript2');
+    const { default: flatDts } = await import('rollup-plugin-flat-dts');
 
     return {
       input: Object.fromEntries(
@@ -231,9 +230,9 @@ export class ProjectRollupConfig {
       ),
       plugins: [
         ProjectRollupPlugin$create(this),
-        ts({
-          typescript,
-          tsconfigOverride: tsConfig.options,
+        tsPlugin({
+          typescript: await tsConfig.typescript,
+          tsconfigOverride: await tsConfig.options,
           cacheRoot: path.join(cacheDir, 'rts2'),
         }),
       ],
@@ -262,7 +261,7 @@ export class ProjectRollupConfig {
           flatDts({
             tsconfig: tsConfig.tsconfig || undefined,
             compilerOptions: {
-              ...tsConfig.tscOptions,
+              ...(await tsConfig.tscOptions),
               declarationMap: true,
             },
             lib: true,
