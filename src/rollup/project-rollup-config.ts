@@ -93,8 +93,11 @@ export class ProjectRollupConfig {
     return this.#project;
   }
 
+  /**
+   * Rollup API instance.
+   */
   get rollup(): Promise<typeof import('rollup')> {
-    return (this.#rollup ??= import('rollup'));
+    return (this.#rollup ??= import('rollup').then(rollup => rollup.default || rollup));
   }
 
   /**

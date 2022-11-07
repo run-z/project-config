@@ -27,7 +27,8 @@
   },
   "bin": {
     "build-z": "bin/build-z.js",
-    "clean-z": "bin/clean-z.js"
+    "clean-z": "bin/clean-z.js",
+    "test-z": "bin/test-z.js"
   },
   "peerDependencies": {
     "@swc/core": "^1.3.14",
@@ -55,6 +56,9 @@
       "optional": true
     },
     "ts-jest": {
+      "optional": true
+    },
+    "typescript": {
       "optional": true
     }
   },

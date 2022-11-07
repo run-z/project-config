@@ -8,6 +8,7 @@ import typescript from 'typescript';
 const externalModules = new Set(builtinModules);
 
 externalModules.add('deepmerge');
+externalModules.add('jest');
 externalModules.add('typescript');
 
 export default defineConfig({
