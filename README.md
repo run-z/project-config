@@ -87,6 +87,8 @@ The following tools supported:
 - [build-z] - transpiles and bundles TypeScript source files with [Rollup].
 - [clean-z] - cleans the output by deleting output directories (`dist/`, `target/`, and cache one, according to
   [project layout]).
+- [test-z] - runs project tests with [Jest].
 
 [build-z]: https://github.com/run-z/project-config/tree/master/doc/build-z.md
 [clean-z]: https://github.com/run-z/project-config/tree/master/doc/clean-z.md
+[test-z]: https://github.com/run-z/project-config/tree/master/doc/test-z.md
