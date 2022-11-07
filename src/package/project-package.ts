@@ -33,7 +33,7 @@ export class ProjectPackage {
   /**
    * Gains package configuration by its specifier.
    *
-   * Respects {@link ProjectToolsBase#package base configuration}.
+   * Respects {@link ProjectToolsInit#package base configuration}.
    *
    * Project package configuration can be specified by one of:
    *

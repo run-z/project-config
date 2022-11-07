@@ -37,7 +37,7 @@ export class ProjectRollupConfig {
   /**
    * Gains specified Rollup configuration of the project.
    *
-   * Respects {@link ProjectToolsBase#rollup base configuration}.
+   * Respects {@link ProjectToolsInit#rollup base configuration}.
    *
    * Rollup configuration can be specified by one of:
    *

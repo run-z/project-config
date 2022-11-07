@@ -17,8 +17,9 @@ export type ProjectToolsBase = {
   readonly [K in keyof ProjectToolsInit]?: ProjectToolType<ProjectToolsInit[K]>;
 };
 
-type ProjectToolType<TInit extends ((project: ProjectConfig) => object) | object | undefined> =
-  TInit extends (project: ProjectConfig) => infer TTool ? TTool : TInit;
+export type ProjectToolType<
+  TInit extends ((project: ProjectConfig) => object) | object | undefined,
+> = TInit extends (project: ProjectConfig) => infer TTool ? TTool : TInit;
 
 /**
  * Development tools specifiers for the project.
