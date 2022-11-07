@@ -9,6 +9,7 @@ describe('ProjectTools', () => {
     expect(tools.package).toBeUndefined();
     expect('package' in tools).toBe(false);
     expect(Reflect.ownKeys(tools)).toEqual([]);
+    expect(Reflect.getOwnPropertyDescriptor(tools, 'package')).toBeUndefined();
   });
   it('has undefined tool base on undefined spec', () => {
     const { tools } = new ProjectConfig({ tools: { package: undefined } });
@@ -16,6 +17,11 @@ describe('ProjectTools', () => {
     expect(tools.package).toBeUndefined();
     expect('package' in tools).toBe(true);
     expect(Reflect.ownKeys(tools)).toEqual(['package']);
+
+    const desc = Reflect.getOwnPropertyDescriptor(tools, 'package');
+
+    expect(desc).toBeDefined();
+    expect(desc?.get?.()).toBeUndefined();
   });
   it('contain initializers', () => {
     const { tools } = new ProjectConfig({
@@ -50,5 +56,18 @@ describe('ProjectTools', () => {
 
     expect(tool).toBe(base);
     await expect(tool.packageJson).resolves.toEqual({ name: 'test' });
+  });
+  it('reflects tool construction failure', () => {
+    const error = new Error('test');
+    const { tools } = new ProjectConfig({
+      tools: {
+        package() {
+          throw error;
+        },
+      },
+    });
+
+    expect(() => tools.package).toThrow(error);
+    expect(() => tools.package).toThrow(error);
   });
 });

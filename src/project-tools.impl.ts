@@ -68,8 +68,4 @@ export class ProjectTools$Proxy implements ProxyHandler<ProjectToolsBase> {
     };
   }
 
-  isExtensible(_target: ProjectToolsBase): boolean {
-    return false;
-  }
-
 }
