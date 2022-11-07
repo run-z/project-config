@@ -33,7 +33,7 @@ export class ProjectJestConfig {
   /**
    * Gains specified configuration of project tests utilizing Jest.
    *
-   * Utilizes {@link @run-z/project-config!ProjectToolsInit#jest Jest tool initializer}.
+   * Respects {@link @run-z/project-config!ProjectToolsBase#jest base configuration}.
    *
    * Jest configuration can be specified by one of:
    *

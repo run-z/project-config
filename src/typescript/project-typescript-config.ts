@@ -33,7 +33,7 @@ export class ProjectTypescriptConfig {
   /**
    * Gains specified TypeScript configuration of the project.
    *
-   * Utilizes {@link ProjectToolsInit#typescript TypeScript tool initializer}.
+   * Respects {@link ProjectToolsBase#typescript base configuration}.
    *
    * TypeScript configuration can be specified by one of:
    *

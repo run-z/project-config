@@ -2,7 +2,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
-import { ProjectToolsInit } from './project-tools-init.js';
+import { ProjectTools$Proxy } from './project-tools.impl.js';
+import { ProjectToolsBase, ProjectToolsInit } from './project-tools.js';
 
 /**
  * Project configuration.
@@ -46,10 +47,10 @@ export class ProjectConfig implements ProjectInit {
     return new ProjectConfig(spec);
   }
 
-  readonly #tools: ProjectToolsInit;
   readonly #rootDir: string;
   readonly #sourceDir: string;
   readonly #outInit: ProjectOutputInit;
+  readonly #tools: ProjectToolsBase;
   readonly #values = new Map<object, unknown>();
   #output?: Promise<ProjectOutput>;
 
@@ -59,12 +60,12 @@ export class ProjectConfig implements ProjectInit {
    * @param init - Project initialization options.
    */
   constructor(init: ProjectInit = {}) {
-    const { tools = {}, rootDir = process.cwd(), sourceDir = 'src' } = init;
+    const { rootDir = process.cwd(), sourceDir = 'src', tools } = init;
 
-    this.#tools = tools;
     this.#rootDir = path.resolve(rootDir);
     this.#sourceDir = path.resolve(rootDir, sourceDir);
     this.#outInit = init;
+    this.#tools = new Proxy({} as ProjectToolsBase, new ProjectTools$Proxy(this, tools));
   }
 
   /**
@@ -76,7 +77,10 @@ export class ProjectConfig implements ProjectInit {
     return this;
   }
 
-  get tools(): ProjectToolsInit {
+  /**
+   * Base configurations of project development tools.
+   */
+  get tools(): ProjectToolsBase {
     return this.#tools;
   }
 
