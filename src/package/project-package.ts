@@ -9,11 +9,14 @@ import { ProjectExport } from './project-export.js';
 function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
   const pkg = project.tools.package;
 
-  if (pkg) {
-    return pkg instanceof ProjectPackage ? pkg : new ProjectPackage(project);
+  if (!pkg) {
+    return new ProjectPackage(project);
+  }
+  if (pkg instanceof ProjectPackage) {
+    return pkg;
   }
 
-  return new ProjectPackage(project);
+  return new ProjectPackage(project).extendOptions(pkg);
 }
 
 /**
@@ -24,7 +27,7 @@ export class ProjectPackage {
   /**
    * Gains package configuration of the project.
    *
-   * Respects {@link ProjectToolsInit#package base configuration}.
+   * Respects {@link ProjectToolsInit#package defaults}.
    *
    * @param project - Configured project.
    *
@@ -52,13 +55,13 @@ export class ProjectPackage {
     this.#customPackageJson = () => ({});
   }
 
-  #rebuild(): this {
-    this.#packageJson = undefined;
-    this.#entryPoints = undefined;
-    this.#exports = undefined;
-    this.#mainEntry = undefined;
+  protected clone(): ProjectPackage {
+    const clone = new ProjectPackage(this.project);
 
-    return this;
+    clone.#autoloaded = this.#autoloaded;
+    clone.#customPackageJson = this.#customPackageJson;
+
+    return clone;
   }
 
   /**
@@ -225,13 +228,15 @@ export class ProjectPackage {
    *
    * @param packageJson - New `package.json` contents to apply.
    *
-   * @returns `this` instance.
+   * @returns Updated instance.
    */
-  replacePackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): this {
-    this.#autoloaded = false;
-    this.#customPackageJson = () => packageJson;
+  replacePackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+    const clone = this.clone();
 
-    return this.#rebuild();
+    clone.#autoloaded = false;
+    clone.#customPackageJson = () => packageJson;
+
+    return clone;
   }
 
   /**
@@ -241,13 +246,15 @@ export class ProjectPackage {
    *
    * @param packageJson - `package.json` contents extending autoloaded ones.
    *
-   * @returns `this` instance.
+   * @returns Updated instance.
    */
-  autoloadPackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): this {
-    this.#autoloaded = true;
-    this.#customPackageJson = () => packageJson;
+  autoloadPackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+    const clone = this.clone();
 
-    return this.#rebuild();
+    clone.#autoloaded = true;
+    clone.#customPackageJson = () => packageJson;
+
+    return clone;
   }
 
   /**
@@ -255,14 +262,15 @@ export class ProjectPackage {
    *
    * @param extension - `package.json` contents extending previous ones.
    *
-   * @returns `this` instance.
+   * @returns Updated instance.
    */
-  extendOptions(extension: PackageJson | PromiseLike<PackageJson>): this {
+  extendOptions(extension: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+    const clone = this.clone();
     const prevPackageJson = this.#customPackageJson;
 
-    this.#customPackageJson = async () => deepmerge(await prevPackageJson(), await extension);
+    clone.#customPackageJson = async () => deepmerge(await prevPackageJson(), await extension);
 
-    return this.#rebuild();
+    return clone;
   }
 
 }
