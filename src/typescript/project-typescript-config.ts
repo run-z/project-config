@@ -1,28 +1,19 @@
 import path from 'node:path';
 import { type RawCompilerOptions } from 'ts-jest';
 import type ts from 'typescript';
-import { ProjectConfig, ProjectSpec } from '../project-config.js';
+import { ProjectConfig } from '../project-config.js';
 
-function ProjectTypescriptConfig$create(
-  project: ProjectConfig,
-  options?: RawCompilerOptions,
-): ProjectTypescriptConfig {
+function ProjectTypescriptConfig$create(project: ProjectConfig): ProjectTypescriptConfig {
   const { typescript } = project.tools;
 
-  if (typescript) {
-    const config =
-      typescript instanceof ProjectTypescriptConfig
-        ? typescript
-        : new ProjectTypescriptConfig(project, typescript);
-
-    if (options) {
-      config.extendOptions(options);
-    }
-
-    return config;
+  if (!typescript) {
+    return new ProjectTypescriptConfig(project);
+  }
+  if (typescript instanceof ProjectTypescriptConfig) {
+    return typescript;
   }
 
-  return new ProjectTypescriptConfig(project, options);
+  return new ProjectTypescriptConfig(project).extendOptions(typescript);
 }
 
 /**
@@ -33,30 +24,14 @@ export class ProjectTypescriptConfig {
   /**
    * Gains specified TypeScript configuration of the project.
    *
-   * Respects {@link ProjectToolsInit#typescript base configuration}.
+   * Respects {@link ProjectToolsInit#typescript defaults}.
    *
-   * TypeScript configuration can be specified by one of:
-   *
-   * - TypeScript configuration instance, which is returned as is.
-   * - TypeScript compiler options to apply on top of the ones loaded from `tsconfig.json` file.
-   *   New TypeScript configuration created in this case.
-   * - Nothing to create default configuration.
-   *
-   * @param project - Configured project {@link ProjectConfig.of specifier}.
-   * @param spec - TypeScript configuration specifier.
+   * @param project - Configured project.
    *
    * @returns TypeScript configuration instance.
    */
-  static of(project?: ProjectSpec, spec?: ProjectTypescriptSpec): ProjectTypescriptConfig {
-    if (spec instanceof ProjectTypescriptConfig) {
-      return spec;
-    }
-
-    const projectConfig = ProjectConfig.of(project);
-
-    return spec
-      ? ProjectTypescriptConfig$create(projectConfig, spec)
-      : projectConfig.get(ProjectTypescriptConfig$create);
+  static of(project: ProjectConfig): ProjectTypescriptConfig {
+    return project.get(ProjectTypescriptConfig$create);
   }
 
   readonly #project: ProjectConfig;
@@ -69,19 +44,21 @@ export class ProjectTypescriptConfig {
   /**
    * Constructs TypeScript configuration.
    *
-   * @param project - Configured project {@link ProjectConfig.of specifier}.
-   * @param options - TypeScript compiler options.
+   * @param project - Configured project.
    */
-  constructor(project?: ProjectSpec, options: RawCompilerOptions = {}) {
-    this.#project = ProjectConfig.of(project);
-    this.#customOptions = () => options;
+  constructor(project: ProjectConfig) {
+    this.#project = project;
+    this.#customOptions = () => ({});
   }
 
-  #rebuild(): this {
-    this.#options = undefined;
-    this.#tscOptions = undefined;
+  protected clone(): ProjectTypescriptConfig {
+    const clone = new ProjectTypescriptConfig(this.project);
 
-    return this;
+    clone.#typescript = this.#typescript;
+    clone.#tsconfig = this.#tsconfig;
+    clone.#customOptions = this.#customOptions;
+
+    return clone;
   }
 
   get project(): ProjectConfig {
@@ -180,13 +157,15 @@ export class ProjectTypescriptConfig {
    *
    * @param options - TypeScript compiler options to use.
    *
-   * @returns `this` instance.
+   * @returns Updated instance.
    */
-  replaceOptions(options: RawCompilerOptions): this {
-    this.#tsconfig = null;
-    this.#customOptions = () => options;
+  replaceOptions(options: RawCompilerOptions): ProjectTypescriptConfig {
+    const clone = this.clone();
 
-    return this.#rebuild();
+    clone.#tsconfig = null;
+    clone.#customOptions = () => options;
+
+    return clone;
   }
 
   /**
@@ -197,9 +176,9 @@ export class ProjectTypescriptConfig {
    * @param tsconfig - Configuration file to load. `tsconfig.json` by default.
    * @param options - TypeScript compiler options extending loaded ones.
    *
-   * @returns `this` instance.
+   * @returns Updated instance.
    */
-  loadOptions(tsconfig: string | undefined, options: RawCompilerOptions): this;
+  loadOptions(tsconfig: string | undefined, options: RawCompilerOptions): ProjectTypescriptConfig;
 
   /**
    * Replaces custom TypeScript compiler options with the ones loaded from `tsconfig.json` file.
@@ -208,27 +187,28 @@ export class ProjectTypescriptConfig {
    *
    * @param options - TypeScript compiler options extending loaded ones.
    *
-   * @returns `this` instance.
+   * @returns Updated instance.
    */
-  loadOptions(options?: RawCompilerOptions): this;
+  loadOptions(options?: RawCompilerOptions): ProjectTypescriptConfig;
 
   loadOptions(
     tsconfigOrOptions: string | RawCompilerOptions = 'tsconfig.json',
     options?: RawCompilerOptions,
-  ): this {
+  ): ProjectTypescriptConfig {
+    const clone = this.clone();
     let compilerOptions: RawCompilerOptions;
 
     if (typeof tsconfigOrOptions === 'string') {
-      this.#tsconfig = tsconfigOrOptions;
+      clone.#tsconfig = tsconfigOrOptions;
       compilerOptions = options ?? {};
     } else {
-      this.#tsconfig = 'tsconfig.json';
+      clone.#tsconfig = 'tsconfig.json';
       compilerOptions = tsconfigOrOptions ?? {};
     }
 
-    this.#customOptions = () => compilerOptions;
+    clone.#customOptions = () => compilerOptions;
 
-    return this.#rebuild();
+    return clone;
   }
 
   /**
@@ -236,19 +216,15 @@ export class ProjectTypescriptConfig {
    *
    * @param extension - TypeScript compiler options extending previous ones.
    *
-   * @returns `this` instance.
+   * @returns Updated instance.
    */
-  extendOptions(extension: RawCompilerOptions): this {
+  extendOptions(extension: RawCompilerOptions): ProjectTypescriptConfig {
+    const clone = this.clone();
     const prevOptions = this.#customOptions;
 
-    this.#customOptions = () => ({ ...prevOptions(), ...extension });
+    clone.#customOptions = () => ({ ...prevOptions(), ...extension });
 
-    return this.#rebuild();
+    return clone;
   }
 
 }
-
-/**
- * {@link ProjectTypescriptConfig.of Specifier} of TypeScript configuration of the project.
- */
-export type ProjectTypescriptSpec = ProjectTypescriptConfig | RawCompilerOptions | undefined;

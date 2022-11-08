@@ -1,13 +1,11 @@
 import { type Config as JestConfig } from '@jest/types';
+import { type RawCompilerOptions } from 'ts-jest';
 import { ProjectJestConfig } from './jest/project-jest-config.js';
 import { PackageJson } from './package/package.json.js';
 import { ProjectPackage } from './package/project-package.js';
 import { ProjectConfig } from './project-config.js';
 import { ProjectRollupConfig, ProjectRollupSpec } from './rollup/project-rollup-config.js';
-import {
-  ProjectTypescriptConfig,
-  ProjectTypescriptSpec,
-} from './typescript/project-typescript-config.js';
+import { ProjectTypescriptConfig } from './typescript/project-typescript-config.js';
 
 /**
  * Defaults for project development tools.
@@ -45,7 +43,7 @@ export interface ProjectToolsInit {
     | undefined;
 
   /**
-   * Initializer of base project's package configuration.
+   * Initializer of package configuration of the project.
    *
    * One of:
    *
@@ -67,9 +65,18 @@ export interface ProjectToolsInit {
   readonly rollup?: ProjectRollupSpec | ((project: ProjectConfig) => ProjectRollupConfig);
 
   /**
-   * {@link ProjectTypescriptConfig.of Specifier} of project's TypeScript configuration.
+   * Initializer of TypeScript configuration of the project.
+   *
+   * One of:
+   *
+   * - TypeScript compiler options to {@link ProjectTypescriptConfig#extendOptions extend} the ones loaded from
+   *   `tsconfig.json` file.
+   * - TypeScript configuration instance.
+   * - Function creating TypeScript configuration.
    */
   readonly typescript?:
-    | ProjectTypescriptSpec
-    | ((project: ProjectConfig) => ProjectTypescriptConfig);
+    | RawCompilerOptions
+    | ProjectTypescriptConfig
+    | ((project: ProjectConfig) => ProjectTypescriptConfig)
+    | undefined;
 }
