@@ -1,6 +1,6 @@
 {
   "name": "@run-z/project-config",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Development tools for TypeScript projects",
   "homepage": "https://github.com/run-z/project-config",
   "repository": {
