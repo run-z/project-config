@@ -16,7 +16,7 @@ function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
     return pkg;
   }
 
-  return new ProjectPackage(project).extendOptions(pkg);
+  return new ProjectPackage(project).extendPackageJson(pkg);
 }
 
 /**
@@ -264,7 +264,7 @@ export class ProjectPackage {
    *
    * @returns Updated instance.
    */
-  extendOptions(extension: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+  extendPackageJson(extension: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
     const clone = this.clone();
     const prevPackageJson = this.#customPackageJson;
 
