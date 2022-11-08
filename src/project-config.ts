@@ -3,7 +3,7 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
 import { ProjectTools$Proxy } from './project-tools.impl.js';
-import { ProjectToolsBase, ProjectToolsInit } from './project-tools.js';
+import { ProjectToolDefaults, ProjectToolsInit } from './project-tools.js';
 
 /**
  * Project configuration.
@@ -50,7 +50,7 @@ export class ProjectConfig implements ProjectInit {
   readonly #rootDir: string;
   readonly #sourceDir: string;
   readonly #outInit: ProjectOutputInit;
-  readonly #tools: ProjectToolsBase;
+  readonly #tools: ProjectToolDefaults;
   readonly #values = new Map<object, unknown>();
   #output?: Promise<ProjectOutput>;
 
@@ -65,7 +65,7 @@ export class ProjectConfig implements ProjectInit {
     this.#rootDir = path.resolve(rootDir);
     this.#sourceDir = path.resolve(rootDir, sourceDir);
     this.#outInit = init;
-    this.#tools = new Proxy({} as ProjectToolsBase, new ProjectTools$Proxy(this, tools));
+    this.#tools = new Proxy({} as ProjectToolDefaults, new ProjectTools$Proxy(this, tools));
   }
 
   /**
@@ -80,7 +80,7 @@ export class ProjectConfig implements ProjectInit {
   /**
    * Base configurations of project development tools.
    */
-  get tools(): ProjectToolsBase {
+  get tools(): ProjectToolDefaults {
     return this.#tools;
   }
 

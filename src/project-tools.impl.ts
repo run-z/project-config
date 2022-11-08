@@ -1,10 +1,10 @@
 import { ProjectConfig } from './project-config.js';
-import { ProjectToolsBase, ProjectToolsInit } from './project-tools.js';
+import { ProjectToolDefaults, ProjectToolsInit } from './project-tools.js';
 
 /**
  * @internal
  */
-export class ProjectTools$Proxy implements ProxyHandler<ProjectToolsBase> {
+export class ProjectTools$Proxy implements ProxyHandler<ProjectToolDefaults> {
 
   readonly #project: ProjectConfig;
   readonly #init: ProjectToolsInit;
@@ -16,24 +16,24 @@ export class ProjectTools$Proxy implements ProxyHandler<ProjectToolsBase> {
   }
 
   get<TKey extends keyof ProjectToolsInit>(
-    _target: ProjectToolsBase,
+    _target: ProjectToolDefaults,
     key: TKey,
-    _receiver: ProjectToolsBase,
-  ): ProjectToolsBase[TKey] {
+    _receiver: ProjectToolDefaults,
+  ): ProjectToolDefaults[TKey] {
     if (this.#tools.has(key)) {
-      return this.#tools.get(key) as ProjectToolsBase[TKey];
+      return this.#tools.get(key) as ProjectToolDefaults[TKey];
     }
 
     const init = this.#init[key];
-    let tool: ProjectToolsBase[TKey];
+    let tool: ProjectToolDefaults[TKey];
 
     if (typeof init !== 'function') {
-      tool = init as ProjectToolsBase[TKey];
+      tool = init as ProjectToolDefaults[TKey];
     } else {
       this.#tools.set(key, undefined); // In case of recursive request while creating the tool.
 
       try {
-        tool = init(this.#project) as ProjectToolsBase[TKey];
+        tool = init(this.#project) as ProjectToolDefaults[TKey];
       } catch (error) {
         this.#tools.delete(key);
         throw error;
@@ -45,16 +45,16 @@ export class ProjectTools$Proxy implements ProxyHandler<ProjectToolsBase> {
     return tool;
   }
 
-  has(_target: ProjectToolsBase, key: string | symbol): boolean {
+  has(_target: ProjectToolDefaults, key: string | symbol): boolean {
     return key in this.#init;
   }
 
-  ownKeys(_target: ProjectToolsBase): Array<string | symbol> {
+  ownKeys(_target: ProjectToolDefaults): Array<string | symbol> {
     return Reflect.ownKeys(this.#init);
   }
 
   getOwnPropertyDescriptor<TKey extends keyof ProjectToolsInit>(
-    target: ProjectToolsBase,
+    target: ProjectToolDefaults,
     key: TKey,
   ): PropertyDescriptor | undefined {
     if (!(key in this.#init)) {

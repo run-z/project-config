@@ -28,7 +28,7 @@ export class ProjectPackage {
   /**
    * Gains package configuration of the project.
    *
-   * Respects {@link ProjectToolsInit#package base configuration}.
+   * Respects {@link ProjectToolsInit#package defaults}.
    *
    * @param project - Configured project.
    *
