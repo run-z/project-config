@@ -9,15 +9,14 @@ import { ProjectExport } from './project-export.js';
 function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
   const pkg = project.tools.package;
 
-  if (pkg) {
-    if (pkg instanceof ProjectPackage) {
-      return pkg;
-    }
-
-    return new ProjectPackage(project).extendOptions(pkg);
+  if (!pkg) {
+    return new ProjectPackage(project);
+  }
+  if (pkg instanceof ProjectPackage) {
+    return pkg;
   }
 
-  return new ProjectPackage(project);
+  return new ProjectPackage(project).extendOptions(pkg);
 }
 
 /**

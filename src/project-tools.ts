@@ -1,11 +1,12 @@
 import { type Config as JestConfig } from '@jest/types';
+import { type RollupOptions } from 'rollup';
 import { type RawCompilerOptions } from 'ts-jest';
-import { ProjectJestConfig } from './jest/project-jest-config.js';
-import { PackageJson } from './package/package.json.js';
-import { ProjectPackage } from './package/project-package.js';
-import { ProjectConfig } from './project-config.js';
-import { ProjectRollupConfig, ProjectRollupSpec } from './rollup/project-rollup-config.js';
-import { ProjectTypescriptConfig } from './typescript/project-typescript-config.js';
+import { type ProjectJestConfig } from './jest/project-jest-config.js';
+import { type PackageJson } from './package/package.json.js';
+import { type ProjectPackage } from './package/project-package.js';
+import { type ProjectConfig } from './project-config.js';
+import { type ProjectRollupConfig } from './rollup/project-rollup-config.js';
+import { type ProjectTypescriptConfig } from './typescript/project-typescript-config.js';
 
 /**
  * Defaults for project development tools.
@@ -60,9 +61,19 @@ export interface ProjectToolsInit {
     | undefined;
 
   /**
-   * {@link ProjectRollupConfig.of Specifier} of Rollup configuration of the project.
+   * Initializer of Rollup configuration of the project.
+   *
+   * One of:
+   *
+   * - Rollup initialization options {@link ProjectRollupConfig#extendOptions extending} default ones.
+   * - Rollup configuration instance.
+   * - Function creating Rollup configuration.
    */
-  readonly rollup?: ProjectRollupSpec | ((project: ProjectConfig) => ProjectRollupConfig);
+  readonly rollup?:
+    | RollupOptions
+    | ProjectRollupConfig
+    | ((project: ProjectConfig) => ProjectRollupConfig)
+    | undefined;
 
   /**
    * Initializer of TypeScript configuration of the project.

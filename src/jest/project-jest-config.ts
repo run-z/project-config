@@ -2,21 +2,20 @@ import { type Config } from '@jest/types';
 import deepmerge from 'deepmerge';
 import path from 'node:path';
 import process from 'node:process';
-import { ProjectConfig } from '../project-config.js';
+import { type ProjectConfig } from '../project-config.js';
 import { ProjectTypescriptConfig } from '../typescript/project-typescript-config.js';
 
 function ProjectJestConfig$create(this: void, project: ProjectConfig): ProjectJestConfig {
   const { jest } = project.tools;
 
-  if (jest) {
-    if (jest instanceof ProjectJestConfig) {
-      return jest;
-    }
-
-    return new ProjectJestConfig(project).extendOptions(jest);
+  if (!jest) {
+    return new ProjectJestConfig(project);
+  }
+  if (jest instanceof ProjectJestConfig) {
+    return jest;
   }
 
-  return new ProjectJestConfig(project);
+  return new ProjectJestConfig(project).extendOptions(jest);
 }
 
 /**
@@ -38,7 +37,7 @@ export class ProjectJestConfig {
   }
 
   /**
-   * Loads Jest configuration form ESM module.
+   * Loads Jest configuration from ESM module.
    *
    * If configuration file found, its options {@link ProjectJestConfig#replaceOptions replace} the default ones.
    * Default configuration returned otherwise.
@@ -50,7 +49,7 @@ export class ProjectJestConfig {
    */
   static async load(project: ProjectConfig, url = './jest.config.js'): Promise<ProjectJestConfig> {
     const config = ProjectJestConfig.of(project);
-    const options = await project.loadConfig(url, null);
+    const options: Config.InitialOptions | null = await project.loadConfig(url, null);
 
     return options ? config.replaceOptions(options) : config;
   }
