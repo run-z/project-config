@@ -1,5 +1,6 @@
 import { ProjectJestConfig, ProjectJestSpec } from './jest/project-jest-config.js';
-import { ProjectPackage, ProjectPackageSpec } from './package/project-package.js';
+import { PackageJson } from './package/package.json.js';
+import { ProjectPackage } from './package/project-package.js';
 import { ProjectConfig } from './project-config.js';
 import { ProjectRollupConfig, ProjectRollupSpec } from './rollup/project-rollup-config.js';
 import {
@@ -33,9 +34,21 @@ export interface ProjectToolsInit {
   readonly jest?: ProjectJestSpec | ((project: ProjectConfig) => ProjectJestConfig);
 
   /**
-   * {@link ProjectPackage.of Specifier} of project's package configuration.
+   * Initializer of base project's package configuration.
+   *
+   * One of:
+   *
+   * - Raw `package.json` contents, or promise-like instance resolving to ones
+   *   {@link ProjectPackage#extendPackageJson extending} autoloaded one.
+   * - Package configuration instance.
+   * - A function creating package configuration.
    */
-  readonly package?: ProjectPackageSpec | ((project: ProjectConfig) => ProjectPackage);
+  readonly package?:
+    | PackageJson
+    | PromiseLike<PackageJson>
+    | ProjectPackage
+    | ((project: ProjectConfig) => ProjectPackage)
+    | undefined;
 
   /**
    * {@link ProjectRollupConfig.of Specifier} of Rollup configuration of the project.

@@ -1,28 +1,19 @@
 import deepmerge from 'deepmerge';
 import module from 'node:module';
 import path from 'node:path';
-import { ProjectConfig, ProjectSpec } from '../project-config.js';
+import { ProjectConfig } from '../project-config.js';
 import { PackageJson } from './package.json';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
 
-function ProjectPackage$create(
-  project: ProjectConfig,
-  packageJson?: PackageJson | PromiseLike<PackageJson>,
-): ProjectPackage {
+function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
   const pkg = project.tools.package;
 
   if (pkg) {
-    const config = pkg instanceof ProjectPackage ? pkg : new ProjectPackage(project, pkg);
-
-    if (packageJson) {
-      config.extendOptions(packageJson);
-    }
-
-    return config;
+    return pkg instanceof ProjectPackage ? pkg : new ProjectPackage(project);
   }
 
-  return new ProjectPackage(project, packageJson);
+  return new ProjectPackage(project);
 }
 
 /**
@@ -31,32 +22,16 @@ function ProjectPackage$create(
 export class ProjectPackage {
 
   /**
-   * Gains package configuration by its specifier.
+   * Gains package configuration of the project.
    *
    * Respects {@link ProjectToolsInit#package base configuration}.
    *
-   * Project package configuration can be specified by one of:
-   *
-   * - Package configuration instance returned as is.
-   * - Raw `package.json` contents, or promise-like instance resolving to ones.
-   *   New package configuration created in this case.
-   * - Nothing to create default configuration.
-   *
-   * @param project - Configured project specifier.
-   * @param spec - Project package specifier.
+   * @param project - Configured project.
    *
    * @returns Package configuration instance.
    */
-  static of(project?: ProjectSpec, spec?: ProjectPackageSpec): ProjectPackage {
-    if (spec instanceof ProjectPackage) {
-      return spec;
-    }
-
-    const projectConfig = ProjectConfig.of(project);
-
-    return spec
-      ? ProjectPackage$create(projectConfig, spec)
-      : projectConfig.get(ProjectPackage$create);
+  static of(project: ProjectConfig): ProjectPackage {
+    return project.get(ProjectPackage$create);
   }
 
   readonly #project: ProjectConfig;
@@ -68,14 +43,13 @@ export class ProjectPackage {
   #mainEntry?: Promise<ProjectEntry>;
 
   /**
-   * Constructs `package.json` representation.
+   * Constructs project package configuration.
    *
-   * @param project - Configured project specifier.
-   * @param packageJson - Raw `package.json` contents.
+   * @param project - Configured project.
    */
-  constructor(project: ProjectSpec, packageJson: PackageJson | PromiseLike<PackageJson> = {}) {
-    this.#project = ProjectConfig.of(project);
-    this.#customPackageJson = () => packageJson;
+  constructor(project: ProjectConfig) {
+    this.#project = project;
+    this.#customPackageJson = () => ({});
   }
 
   #rebuild(): this {
@@ -362,15 +336,6 @@ class PackageJson$EntryPoint implements PackageJson.EntryPoint {
   }
 
 }
-
-/**
- * Project package {@link ProjectPackage.of specifier}.
- */
-export type ProjectPackageSpec =
-  | ProjectPackage
-  | PackageJson
-  | PromiseLike<PackageJson>
-  | undefined;
 
 function loadPackageJson(project: ProjectConfig): PackageJson {
   const require = module.createRequire(import.meta.url);

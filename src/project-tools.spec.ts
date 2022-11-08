@@ -48,14 +48,10 @@ describe('ProjectTools', () => {
       },
     });
 
-    const base = project.tools.package;
+    const pkg = project.tools.package as ProjectPackage;
 
-    expect(base).toBeInstanceOf(ProjectPackage);
-
-    const tool = ProjectPackage.of(project, base);
-
-    expect(tool).toBe(base);
-    await expect(tool.packageJson).resolves.toEqual({ name: 'test' });
+    expect(pkg).toBeInstanceOf(ProjectPackage);
+    await expect(pkg?.packageJson).resolves.toEqual({ name: 'test' });
   });
   it('reflects tool construction failure', () => {
     const error = new Error('test');
