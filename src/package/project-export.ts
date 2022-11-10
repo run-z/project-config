@@ -24,8 +24,8 @@ export class ProjectExport extends ProjectEntry {
     this.#entryPoint = entryPoint;
   }
 
-  protected clone(): this {
-    const clone = this.clone();
+  protected override clone(): this {
+    const clone = super.clone();
 
     clone.#distFile = this.#distFile;
 

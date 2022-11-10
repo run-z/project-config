@@ -3,6 +3,7 @@ import module from 'node:module';
 import path from 'node:path';
 import { isPresent } from '../impl/is-present.js';
 import { ProjectConfig } from '../project-config.js';
+import { ProjectDevTool } from '../project-dev-tool.js';
 import { PackageJson } from './package.json';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
@@ -23,7 +24,7 @@ function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
 /**
  * Package configuration constructed by `package.json` contents.
  */
-export class ProjectPackage {
+export class ProjectPackage extends ProjectDevTool {
 
   /**
    * Gains package configuration of the project.
@@ -38,7 +39,6 @@ export class ProjectPackage {
     return project.get(ProjectPackage$create);
   }
 
-  readonly #project: ProjectConfig;
   #autoloaded = true;
   #customPackageJson: () => PackageJson | PromiseLike<PackageJson>;
   #packageJson?: Promise<PackageJson>;
@@ -53,24 +53,17 @@ export class ProjectPackage {
    * @param project - Configured project.
    */
   constructor(project: ProjectConfig) {
-    this.#project = project;
+    super(project);
     this.#customPackageJson = () => ({});
   }
 
-  protected clone(): ProjectPackage {
-    const clone = new ProjectPackage(this.project);
+  protected override clone(): this {
+    const clone = super.clone();
 
     clone.#autoloaded = this.#autoloaded;
     clone.#customPackageJson = this.#customPackageJson;
 
     return clone;
-  }
-
-  /**
-   * Configured project.
-   */
-  get project(): ProjectConfig {
-    return this.#project;
   }
 
   /**
@@ -271,7 +264,7 @@ export class ProjectPackage {
    *
    * @returns Updated instance.
    */
-  replacePackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+  replacePackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): this {
     const clone = this.clone();
 
     clone.#autoloaded = false;
@@ -289,7 +282,7 @@ export class ProjectPackage {
    *
    * @returns Updated instance.
    */
-  autoloadPackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+  autoloadPackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): this {
     const clone = this.clone();
 
     clone.#autoloaded = true;
@@ -305,7 +298,7 @@ export class ProjectPackage {
    *
    * @returns Updated instance.
    */
-  extendPackageJson(extension: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+  extendPackageJson(extension: PackageJson | PromiseLike<PackageJson>): this {
     const clone = this.clone();
     const prevPackageJson = this.#customPackageJson;
 

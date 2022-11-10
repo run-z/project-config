@@ -2,6 +2,7 @@ import path from 'node:path';
 import { type RawCompilerOptions } from 'ts-jest';
 import type ts from 'typescript';
 import { ProjectConfig } from '../project-config.js';
+import { ProjectDevTool } from '../project-dev-tool.js';
 
 function ProjectTypescriptConfig$create(project: ProjectConfig): ProjectTypescriptConfig {
   const { typescript } = project.tools;
@@ -19,7 +20,7 @@ function ProjectTypescriptConfig$create(project: ProjectConfig): ProjectTypescri
 /**
  * TypeScript configuration of the project.
  */
-export class ProjectTypescriptConfig {
+export class ProjectTypescriptConfig extends ProjectDevTool {
 
   /**
    * Gains specified TypeScript configuration of the project.
@@ -34,7 +35,6 @@ export class ProjectTypescriptConfig {
     return project.get(ProjectTypescriptConfig$create);
   }
 
-  readonly #project: ProjectConfig;
   #typescript?: Promise<typeof ts>;
   #tsconfig: string | null = 'tsconfig.json';
   #customOptions: () => RawCompilerOptions;
@@ -47,22 +47,18 @@ export class ProjectTypescriptConfig {
    * @param project - Configured project.
    */
   constructor(project: ProjectConfig) {
-    this.#project = project;
+    super(project);
     this.#customOptions = () => ({});
   }
 
-  protected clone(): ProjectTypescriptConfig {
-    const clone = new ProjectTypescriptConfig(this.project);
+  protected override clone(): this {
+    const clone = super.clone();
 
     clone.#typescript = this.#typescript;
     clone.#tsconfig = this.#tsconfig;
     clone.#customOptions = this.#customOptions;
 
     return clone;
-  }
-
-  get project(): ProjectConfig {
-    return this.#project;
   }
 
   /**
@@ -96,7 +92,7 @@ export class ProjectTypescriptConfig {
     }
 
     const ts = await this.typescript;
-    const tsconfig = path.resolve(this.#project.rootDir, this.tsconfig);
+    const tsconfig = path.resolve(this.project.rootDir, this.tsconfig);
     const { config = {}, error } = ts.readConfigFile(tsconfig, ts.sys.readFile) as {
       config?: { compilerOptions?: RawCompilerOptions };
       error?: ts.Diagnostic;
@@ -142,7 +138,7 @@ export class ProjectTypescriptConfig {
 
   #errorFormatHost(typescript: typeof ts): ts.FormatDiagnosticsHost {
     return {
-      getCurrentDirectory: () => this.#project.rootDir,
+      getCurrentDirectory: () => this.project.rootDir,
       getNewLine: () => typescript.sys.newLine,
       getCanonicalFileName: typescript.sys.useCaseSensitiveFileNames
         ? f => f
@@ -159,7 +155,7 @@ export class ProjectTypescriptConfig {
    *
    * @returns Updated instance.
    */
-  replaceOptions(options: RawCompilerOptions): ProjectTypescriptConfig {
+  replaceOptions(options: RawCompilerOptions): this {
     const clone = this.clone();
 
     clone.#tsconfig = null;
@@ -178,7 +174,7 @@ export class ProjectTypescriptConfig {
    *
    * @returns Updated instance.
    */
-  loadOptions(tsconfig: string | undefined, options: RawCompilerOptions): ProjectTypescriptConfig;
+  loadOptions(tsconfig: string | undefined, options: RawCompilerOptions): this;
 
   /**
    * Replaces custom TypeScript compiler options with the ones loaded from `tsconfig.json` file.
@@ -189,12 +185,12 @@ export class ProjectTypescriptConfig {
    *
    * @returns Updated instance.
    */
-  loadOptions(options?: RawCompilerOptions): ProjectTypescriptConfig;
+  loadOptions(options?: RawCompilerOptions): this;
 
   loadOptions(
     tsconfigOrOptions: string | RawCompilerOptions = 'tsconfig.json',
     options?: RawCompilerOptions,
-  ): ProjectTypescriptConfig {
+  ): this {
     const clone = this.clone();
     let compilerOptions: RawCompilerOptions;
 
@@ -218,7 +214,7 @@ export class ProjectTypescriptConfig {
    *
    * @returns Updated instance.
    */
-  extendOptions(extension: RawCompilerOptions): ProjectTypescriptConfig {
+  extendOptions(extension: RawCompilerOptions): this {
     const clone = this.clone();
     const prevOptions = this.#customOptions;
 

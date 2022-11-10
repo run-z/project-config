@@ -33,7 +33,7 @@ export abstract class ProjectDevTool {
    * @returns Project clone created with its constructor.
    */
   protected clone(): this {
-    return this.constructor(this.project) as this;
+    return new (this.constructor as new (project: ProjectConfig) => this)(this.project);
   }
 
 }
