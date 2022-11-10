@@ -1,6 +1,7 @@
 import deepmerge from 'deepmerge';
 import module from 'node:module';
 import path from 'node:path';
+import { isPresent } from '../impl/is-present.js';
 import { ProjectConfig } from '../project-config.js';
 import { PackageJson } from './package.json';
 import { ProjectEntry } from './project-entry.js';
@@ -43,6 +44,7 @@ export class ProjectPackage {
   #packageJson?: Promise<PackageJson>;
   #entryPoints?: Promise<ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint>>;
   #exports?: Promise<ReadonlyMap<string, ProjectExport>>;
+  #generatedEntries?: Promise<ReadonlyMap<string, ProjectEntry.Generated>>;
   #mainEntry?: Promise<ProjectEntry>;
 
   /**
@@ -219,28 +221,41 @@ export class ProjectPackage {
     return this.exports;
   }
 
+  get generatedEntries(): Promise<ReadonlyMap<string, ProjectEntry.Generated>> {
+    return (this.#generatedEntries ??= this.#detectGeneratedEntries());
+  }
+
+  async #detectGeneratedEntries(): Promise<ReadonlyMap<string, ProjectEntry.Generated>> {
+    const allEntries = await this.entries;
+    const entries = await Promise.all(
+      [...allEntries].map(
+        async ([name, entry]): Promise<[string, ProjectEntry.Generated] | undefined> => {
+          const generated = await entry.toGenerated();
+
+          return generated && [name, generated];
+        },
+      ),
+    );
+
+    return new Map(entries.filter(isPresent));
+  }
+
   /**
    * Promise resolved to project exports map with their {@link ProjectEntry.name names} as keys.
    */
   get exports(): Promise<ReadonlyMap<string, ProjectExport>> {
-    if (!this.#exports) {
-      this.#exports = this.#loadExports();
-    }
-
-    return this.#exports;
+    return (this.#exports ??= this.#detectExports());
   }
 
-  async #loadExports(): Promise<ReadonlyMap<string, ProjectExport>> {
+  async #detectExports(): Promise<ReadonlyMap<string, ProjectExport>> {
     const entryPoints = await this.entryPoints;
-    const entries = await Promise.all(
-      [...entryPoints.values()].map(async entryPoint => {
-        const entry = await ProjectExport.create(this, { entryPoint });
 
-        return entry ? ([entry.name, entry] as const) : undefined;
-      }),
+    return new Map(
+      [...entryPoints].map(([name, entryPoint]) => [
+        name,
+        new ProjectExport(this.project, entryPoint),
+      ]),
     );
-
-    return new Map(entries.filter(entry => !!entry) as (readonly [string, ProjectExport])[]);
   }
 
   /**
@@ -329,7 +344,7 @@ class PackageJson$EntryPoint implements PackageJson.EntryPoint {
     return this.#path;
   }
 
-  withConditions(...conditions: string[]): `./${string}` | undefined {
+  findConditional(...conditions: string[]): `./${string}` | undefined {
     if (!conditions.length) {
       conditions = ['default'];
     }

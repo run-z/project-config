@@ -30,7 +30,7 @@ export namespace PackageJson {
      *
      * @returns Matching path or pattern, or `undefined` when not found.
      */
-    withConditions(...conditions: string[]): `./${string}` | undefined;
+    findConditional(...conditions: string[]): `./${string}` | undefined;
   }
 
   export type Dependencies = {
