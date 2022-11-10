@@ -98,6 +98,28 @@ export class ProjectPackage {
   }
 
   /**
+   * Detects whether this package depends on the given one.
+   *
+   * @param packageName - Dependency package name.
+   *
+   * @returns Promise resolved to `true` when the package found among {@link PackageJson#dependencies runtime
+   * dependencies}, to `'dev'` when it is found among {@link PAckageJson#devDependencies development dependencies},
+   * or to `false` otherwise.
+   */
+  async dependsOn(packageName: string): Promise<boolean | 'dev'> {
+    const packageJson = await this.packageJson;
+
+    if (packageJson.dependencies?.[packageName]) {
+      return true;
+    }
+    if (packageJson.devDependencies?.[packageName]) {
+      return 'dev';
+    }
+
+    return false;
+  }
+
+  /**
    * Read-only map of package entry points with exported paths or patterns as their keys.
    */
   get entryPoints(): Promise<ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint>> {

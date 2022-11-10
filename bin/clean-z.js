@@ -1,6 +1,16 @@
 #!/usr/bin/env node
-import { ProjectConfig } from '@run-z/project-config';
+import { ProjectConfig, ProjectError } from '@run-z/project-config';
+import process from 'node:process';
 
-const output = await new ProjectConfig().output;
+try {
+  const output = await new ProjectConfig().output;
 
-await output.clean();
+  await output.clean();
+} catch (error) {
+  if (error instanceof ProjectError) {
+    console.error(error.message);
+    process.exit(1);
+  } else {
+    throw error;
+  }
+}

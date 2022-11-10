@@ -1,6 +1,7 @@
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
+import vm from 'node:vm';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
 import { ProjectTools$Proxy } from './project-tools.impl.js';
 import { ProjectToolDefaults, ProjectToolsInit } from './project-tools.js';
@@ -107,6 +108,15 @@ export class ProjectConfig implements ProjectInit {
     }
 
     return this.#output;
+  }
+
+  /**
+   * Detects whether this project supports ESM.
+   *
+   * `true` when `--experimental-vm-modules` command-line option passed to Node.js process.
+   */
+  get supportsVmModules(): boolean {
+    return 'Module' in vm;
   }
 
   /**
