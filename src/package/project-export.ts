@@ -85,7 +85,7 @@ export class ProjectExport extends ProjectEntry {
   }
 
   /**
-   * Searches for path or pattern matching to all of provided conditions.
+   * Searches for path or pattern matching all provided conditions.
    *
    * Tries to find an entry point without `default` and `import` conditions if not found.
    *

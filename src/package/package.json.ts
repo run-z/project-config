@@ -24,7 +24,7 @@ export namespace PackageJson {
     readonly path: '.' | `./${string}`;
 
     /**
-     * Searches for path or pattern matching to all of provided conditions.
+     * Searches for path or pattern matching all provided conditions.
      *
      * @param conditions - Required export conditions. When missing, searches for `default` one.
      *
