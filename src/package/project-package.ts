@@ -221,6 +221,10 @@ export class ProjectPackage {
     return this.exports;
   }
 
+  /**
+   * Promise resolved to {@link ProjectEntry#isGEnerated generated} project entries with their
+   * {@link ProjectEntry.name names} as keys.
+   */
   get generatedEntries(): Promise<ReadonlyMap<string, ProjectEntry.Generated>> {
     return (this.#generatedEntries ??= this.#detectGeneratedEntries());
   }
