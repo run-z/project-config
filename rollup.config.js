@@ -49,6 +49,7 @@ export default defineConfig({
           jest: { file: 'project-config.jest.d.ts' },
           rollup: { file: 'project-config.rollup.d.ts' },
         },
+        internal: ['**/impl/**', '**/*.impl'],
       }),
     ],
   },
