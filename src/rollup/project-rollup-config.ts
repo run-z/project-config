@@ -2,7 +2,6 @@ import deepmerge from 'deepmerge';
 import module from 'node:module';
 import path from 'node:path';
 import type { RollupOptions, RollupOutput } from 'rollup';
-import { ProjectEntry } from '../package/project-entry.js';
 import { ProjectPackage } from '../package/project-package.js';
 import { type ProjectConfig } from '../project-config.js';
 import { ProjectTypescriptConfig } from '../typescript/project-typescript-config.js';
@@ -229,13 +228,26 @@ export class ProjectRollupConfig {
     const pkg = ProjectPackage.of(this.project);
     const output = await this.#project.output;
     const { distDir, cacheDir } = output;
-    const entries = await pkg.entries;
+    const entries = await pkg.generatedEntries;
     const mainEntry = await pkg.mainEntry;
-    const chunksByDir: [string, string][] = [...entries].map(([name, entry]) => {
-      const entryDir = path.dirname(path.resolve(sourceDir, entry.sourceFile));
+    const distFiles = new Map<string, string>(
+      await Promise.all(
+        [...entries].map(
+          async ([name, entry]): Promise<[string, string]> => [
+            name,
+            path.relative(distDir, path.resolve(distDir, await entry.distFile)),
+          ],
+        ),
+      ),
+    );
+    const chunksByDir: [string, string][] = await Promise.all(
+      [...entries].map(async ([name, entry]): Promise<[string, string]> => {
+        const sourceFile = await entry.sourceFile;
+        const entryDir = path.dirname(path.resolve(sourceDir, sourceFile));
 
-      return [`${entryDir}/${path.sep}`, `_${name}.js`];
-    });
+        return [`${entryDir}/${path.sep}`, `_${name}.js`];
+      }),
+    );
 
     const tsConfig = ProjectTypescriptConfig.of(this.project);
     const { default: tsPlugin } = await import('rollup-plugin-typescript2');
@@ -243,7 +255,14 @@ export class ProjectRollupConfig {
 
     return {
       input: Object.fromEntries(
-        [...entries].map(([name, entry]) => [name, path.resolve(sourceDir, entry.sourceFile)]),
+        await Promise.all(
+          [...entries].map(
+            async ([name, entry]): Promise<[string, string]> => [
+              name,
+              path.resolve(sourceDir, await entry.sourceFile),
+            ],
+          ),
+        ),
       ),
       plugins: [
         ProjectRollupPlugin$create(this),
@@ -258,7 +277,7 @@ export class ProjectRollupConfig {
         dir: distDir,
         format: 'esm',
         sourcemap: true,
-        entryFileNames: chunk => entries.get(chunk.name)?.distFile || '',
+        entryFileNames: chunk => distFiles.get(chunk.name) || '',
         manualChunks: (moduleId, moduleApi) => {
           const moduleInfo = moduleApi.getModuleInfo(moduleId);
 
@@ -282,32 +301,19 @@ export class ProjectRollupConfig {
               declarationMap: true,
             },
             lib: true,
-            file: this.#dtsName(distDir, mainEntry),
+            file: await mainEntry.typesFile,
             entries: Object.fromEntries(
-              [...entries]
-                .filter(item => item[1] !== mainEntry)
-                .map(([name, entry]) => [name, { file: this.#dtsName(distDir, entry) }]),
+              await Promise.all(
+                [...entries]
+                  .filter(item => item[1] !== mainEntry)
+                  .map(async ([name, entry]) => [name, { file: await entry.typesFile }]),
+              ),
             ),
+            internal: ['**/impl/**', '**/*.impl'],
           }),
         ],
       },
     };
-  }
-
-  #dtsName(distDir: string, entry: ProjectEntry): string {
-    const projectExport = entry.toExport();
-
-    if (projectExport) {
-      // Try to extract `.d.ts` file name from corresponding export condition.
-      const types = projectExport.withConditions('types');
-
-      if (types) {
-        return path.relative(distDir, types);
-      }
-    }
-
-    // Fall back to entry name with `.d.ts` extension.
-    return `${entry.name}.d.ts`;
   }
 
   async #externalModules(): Promise<(this: void, id: string) => boolean> {
