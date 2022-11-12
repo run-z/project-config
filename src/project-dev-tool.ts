@@ -12,7 +12,7 @@ import { type ProjectDevHost } from './project-dev-host.js';
  */
 export abstract class ProjectDevTool<THost extends ProjectDevHost = ProjectConfig> {
 
-  readonly #host: THost;
+  #host: THost;
 
   /**
    * Constructs development tool.
@@ -27,7 +27,7 @@ export abstract class ProjectDevTool<THost extends ProjectDevHost = ProjectConfi
    * Development tool host.
    */
   get host(): THost {
-    return this.#host.actual;
+    return (this.#host = this.#host.actual);
   }
 
   /**
