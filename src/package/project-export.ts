@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { ProjectConfig } from '../project-config.js';
-import { ProjectError } from '../project.error.js';
 import { PackageJson } from './package.json';
 import { ProjectEntry } from './project-entry.js';
+import { ProjectPackage } from './project-package.js';
 
 /**
  * Project entry corresponding to {@link PackageJson.EntryPoint package export}.
@@ -10,7 +10,7 @@ import { ProjectEntry } from './project-entry.js';
 export class ProjectExport extends ProjectEntry {
 
   readonly #entryPoint: PackageJson.EntryPoint;
-  #distFile?: Promise<string>;
+  #distFiles?: Promise<ProjectEntry.DistFiles | null>;
 
   /**
    * Constructs project export entry of the `project`.
@@ -24,14 +24,6 @@ export class ProjectExport extends ProjectEntry {
     this.#entryPoint = entryPoint;
   }
 
-  protected override clone(): this {
-    const clone = super.clone();
-
-    clone.#distFile = this.#distFile;
-
-    return clone;
-  }
-
   /**
    * Package entry point this project export represents.
    */
@@ -43,28 +35,90 @@ export class ProjectExport extends ProjectEntry {
     return this.entryPoint.path === '.';
   }
 
-  override get distFile(): Promise<string> {
-    return (this.#distFile ??= this.#detectDistFile());
+  override get distFiles(): Promise<ProjectEntry.DistFiles | null> {
+    return (this.#distFiles ??= this.#detectDistFiles());
   }
 
-  async #detectDistFile(): Promise<string> {
-    const distFilePath =
-      this.entryPoint.findConditional('import') || this.entryPoint.findConditional('default');
+  async #detectDistFiles(): Promise<ProjectEntry.DistFiles | null> {
+    const esm = await this.#findDistFile('import');
+    const commonJS = await this.#findDistFile('require');
+    const defaultDist = await this.#findDistFile('default');
 
-    if (!distFilePath) {
-      throw new ProjectError(`Nothing exported for "${this.entryPoint.path}" package export`);
+    if (esm) {
+      // Explicit ESM entry point.
+      if (commonJS) {
+        // ...and explicit CommonJS entry point.
+        return {
+          esm,
+          commonJS,
+        };
+      }
+
+      if (!defaultDist || defaultDist === esm) {
+        // No default entry, or it is the same as ESM.
+        // No CommonJS distribution.
+        return { esm };
+      }
+
+      // Use default entry point as CommonJS one.
+      return { esm, commonJS: defaultDist };
     }
 
-    const { distDir } = await this.project.output;
+    if (commonJS) {
+      // Explicit CommonJS entry only.
+      if (!defaultDist || defaultDist === commonJS) {
+        // No default entry, or it is the same as CommonJS.
+        // No ESM distribution.
+        return { commonJS };
+      }
 
-    return path.relative(distDir, distFilePath);
+      // Use default entry point as ESM one.
+      return { esm: defaultDist, commonJS };
+    }
+
+    if (!defaultDist) {
+      // No suitable entries.
+      return null;
+    }
+
+    // No explicit ESM or CommonJS entries.
+    // Detect the type of default one.
+
+    if (defaultDist.endsWith('.mjs')) {
+      // Explicitly marked as ESM.
+      return { esm: defaultDist };
+    }
+    if (defaultDist.endsWith('.cjs')) {
+      // Explicitly marked as CommonJS.
+      return { commonJS: defaultDist };
+    }
+
+    const { type } = await ProjectPackage.of(this.project).packageJson;
+
+    // Detect by package type as the last resort.
+    return type === 'module' ? { esm: defaultDist } : { commonJS: defaultDist };
   }
 
-  protected override async detectTypesFile(): Promise<string> {
+  async #findDistFile(condition: string): Promise<string | undefined> {
+    const file = this.entryPoint.findConditional(condition);
+
+    if (!file) {
+      return;
+    }
+
+    const filePath = path.resolve(this.project.rootDir, file);
+    const { distDir } = await this.project.output;
+
+    return filePath.startsWith(`${distDir}${path.sep}`)
+      ? path.relative(distDir, filePath)
+      : undefined;
+  }
+
+  protected override async detectTypesFile(): Promise<string | null> {
     const types = this.findConditional('types');
 
     if (!types) {
-      return await super.typesFile;
+      return await super.detectTypesFile();
     }
 
     const { distDir } = await this.project.output;

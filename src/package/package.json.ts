@@ -4,6 +4,7 @@
 export interface PackageJson {
   readonly name?: string | undefined;
   readonly version?: string | undefined;
+  readonly type?: 'module' | 'commonjs';
   readonly exports?: PackageJson.Exports | undefined;
   readonly dependencies?: PackageJson.Dependencies;
   readonly devDependencies?: PackageJson.Dependencies;

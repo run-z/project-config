@@ -1,7 +1,8 @@
 import deepmerge from 'deepmerge';
 import module from 'node:module';
 import path from 'node:path';
-import type { RollupOptions, RollupOutput } from 'rollup';
+import type { OutputOptions, OutputPlugin, RollupOptions, RollupOutput } from 'rollup';
+import { ProjectEntry } from '../package/project-entry.js';
 import { ProjectPackage } from '../package/project-package.js';
 import { type ProjectConfig } from '../project-config.js';
 import { ProjectDevTool } from '../project-dev-tool.js';
@@ -220,31 +221,10 @@ export class ProjectRollupConfig extends ProjectDevTool {
     const { sourceDir } = this.project;
     const pkg = ProjectPackage.of(this.project);
     const output = await this.project.output;
-    const { distDir, cacheDir } = output;
+    const { cacheDir } = output;
     const entries = await pkg.generatedEntries;
-    const mainEntry = await pkg.mainEntry;
-    const distFiles = new Map<string, string>(
-      await Promise.all(
-        [...entries].map(
-          async ([name, entry]): Promise<[string, string]> => [
-            name,
-            path.relative(distDir, path.resolve(distDir, await entry.distFile)),
-          ],
-        ),
-      ),
-    );
-    const chunksByDir: [string, string][] = await Promise.all(
-      [...entries].map(async ([name, entry]): Promise<[string, string]> => {
-        const sourceFile = await entry.sourceFile;
-        const entryDir = path.dirname(path.resolve(sourceDir, sourceFile));
-
-        return [`${entryDir}/${path.sep}`, `_${name}.js`];
-      }),
-    );
-
     const tsConfig = ProjectTypescriptConfig.of(this.project);
     const { default: tsPlugin } = await import('rollup-plugin-typescript2');
-    const { default: flatDts } = await import('rollup-plugin-flat-dts');
 
     return {
       input: Object.fromEntries(
@@ -265,51 +245,12 @@ export class ProjectRollupConfig extends ProjectDevTool {
           cacheRoot: path.join(cacheDir, 'rts2'),
         }),
       ],
-      external: await this.#externalModules(),
-      output: {
-        dir: distDir,
-        format: 'esm',
-        sourcemap: true,
-        entryFileNames: chunk => distFiles.get(chunk.name) || '',
-        manualChunks: (moduleId, moduleApi) => {
-          const moduleInfo = moduleApi.getModuleInfo(moduleId);
-
-          if (!moduleInfo || moduleInfo.isExternal) {
-            return null;
-          }
-
-          for (const [dir, chunk] of chunksByDir) {
-            if (moduleId.startsWith(dir)) {
-              return chunk;
-            }
-          }
-
-          return null;
-        },
-        plugins: [
-          flatDts({
-            tsconfig: tsConfig.tsconfig || undefined,
-            compilerOptions: {
-              ...(await tsConfig.tscOptions),
-              declarationMap: true,
-            },
-            lib: true,
-            file: await mainEntry.typesFile,
-            entries: Object.fromEntries(
-              await Promise.all(
-                [...entries]
-                  .filter(item => item[1] !== mainEntry)
-                  .map(async ([name, entry]) => [name, { file: await entry.typesFile }]),
-              ),
-            ),
-            internal: ['**/impl/**', '**/*.impl'],
-          }),
-        ],
-      },
+      external: await this.#createExternal(),
+      output: await this.#createOutputs(),
     };
   }
 
-  async #externalModules(): Promise<(this: void, id: string) => boolean> {
+  async #createExternal(): Promise<(this: void, id: string) => boolean> {
     const pkg = ProjectPackage.of(this.project);
     const {
       dependencies = {},
@@ -349,16 +290,119 @@ export class ProjectRollupConfig extends ProjectDevTool {
     };
   }
 
-}
+  async #createOutputs(): Promise<OutputOptions | OutputOptions[]> {
+    const pkg = ProjectPackage.of(this.project);
+    const entries = await pkg.generatedEntries;
+    let hasESM = false;
+    let hasCommonJS = false;
 
-/**
- * {@link ProjectRollupConfig.of Specifier} of Rollup configuration of the project.
- */
-export type ProjectRollupSpec =
-  | ProjectRollupConfig
-  | RollupOptions
-  | readonly RollupOptions[]
-  | undefined;
+    for (const entry of entries.values()) {
+      const distFiles = await entry.distFiles;
+
+      hasESM ||= !!distFiles.esm;
+      hasCommonJS ||= !!distFiles.commonJS;
+
+      if (hasESM && hasCommonJS) {
+        break;
+      }
+    }
+
+    if (hasESM && hasCommonJS) {
+      return await Promise.all([this.#createOutput('esm', true), this.#createOutput('commonjs')]);
+    }
+    if (hasCommonJS) {
+      return await this.#createOutput('commonjs', true);
+    }
+
+    return await this.#createOutput('esm', true);
+  }
+
+  async #createOutput(format: 'esm' | 'commonjs', withDts?: boolean): Promise<OutputOptions> {
+    const distFileOf = format === 'esm' ? ProjectEntry$esmDist : ProjectEntry$commonJSDist;
+    const { sourceDir } = this.project;
+    const pkg = ProjectPackage.of(this.project);
+    const output = await this.project.output;
+    const { distDir } = output;
+    const entries = await pkg.generatedEntries;
+    const distFiles = new Map<string, string>(
+      await Promise.all(
+        [...entries].map(
+          async ([name, entry]): Promise<[string, string]> => [
+            name,
+            path.relative(distDir, path.resolve(distDir, distFileOf(await entry.distFiles))),
+          ],
+        ),
+      ),
+    );
+    const chunkExt = format === 'esm' ? '.mjs' : '.cjs';
+    const chunksByDir: [string, string][] = await Promise.all(
+      [...entries].map(async ([name, entry]): Promise<[string, string]> => {
+        const sourceFile = await entry.sourceFile;
+        const entryDir = path.dirname(path.resolve(sourceDir, sourceFile));
+
+        return [`${entryDir}/${path.sep}`, `_${name}.${chunkExt}`];
+      }),
+    );
+
+    return {
+      dir: distDir,
+      format,
+      sourcemap: true,
+      entryFileNames: chunk => distFiles.get(chunk.name) || '',
+      manualChunks: (moduleId, moduleApi) => {
+        const moduleInfo = moduleApi.getModuleInfo(moduleId);
+
+        if (!moduleInfo || moduleInfo.isExternal) {
+          return null;
+        }
+
+        for (const [dir, chunk] of chunksByDir) {
+          if (moduleId.startsWith(dir)) {
+            return chunk;
+          }
+        }
+
+        return null;
+      },
+      plugins: withDts ? await this.#flatDts() : [],
+    };
+  }
+
+  async #flatDts(): Promise<OutputPlugin[]> {
+    const pkg = ProjectPackage.of(this.project);
+    const mainEntry = await pkg.mainEntry;
+    const generatedMainEntry = await mainEntry.toGenerated();
+
+    if (!generatedMainEntry) {
+      return [];
+    }
+
+    const tsConfig = ProjectTypescriptConfig.of(this.project);
+    const entries = await pkg.generatedEntries;
+    const { default: flatDts } = await import('rollup-plugin-flat-dts');
+
+    return [
+      flatDts({
+        tsconfig: tsConfig.tsconfig || undefined,
+        compilerOptions: {
+          ...(await tsConfig.tscOptions),
+          declarationMap: true,
+        },
+        lib: true,
+        file: await generatedMainEntry.typesFile,
+        entries: Object.fromEntries(
+          await Promise.all(
+            [...entries]
+              .filter(item => item[1] !== generatedMainEntry)
+              .map(async ([name, entry]) => [name, { file: await entry.typesFile }]),
+          ),
+        ),
+        internal: ['**/impl/**', '**/*.impl'],
+      }),
+    ];
+  }
+
+}
 
 function RollupOptions$asArray(
   options: RollupOptions | readonly RollupOptions[] | undefined,
@@ -407,4 +451,24 @@ async function RollupOptions$extend(
       return [...target, ...source];
     },
   });
+}
+
+function ProjectEntry$esmDist({ esm, commonJS }: ProjectEntry.DistFiles): string {
+  if (esm) {
+    return esm;
+  }
+
+  const extIdx = commonJS!.lastIndexOf('.');
+
+  return extIdx > 0 ? `${commonJS!.slice(0, extIdx)}.mjs` : `${commonJS}.mjs`;
+}
+
+function ProjectEntry$commonJSDist({ esm, commonJS }: ProjectEntry.DistFiles): string {
+  if (commonJS) {
+    return commonJS;
+  }
+
+  const extIdx = esm!.lastIndexOf('.');
+
+  return extIdx > 0 ? `${esm!.slice(0, extIdx)}.cjs` : `${esm}.cjs`;
 }
