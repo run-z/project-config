@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { type PackageJson } from './package.json';
+import { PackageJson$DefaultEntryPoint } from './package.json.impl.js';
 import { ProjectEntry } from './project-entry.js';
 import { type ProjectPackage } from './project-package.js';
 
@@ -155,10 +156,3 @@ export class ProjectExport extends ProjectEntry {
   }
 
 }
-
-const PackageJson$DefaultEntryPoint: PackageJson.EntryPoint = {
-  path: '.',
-  findConditional(): undefined {
-    return;
-  },
-};

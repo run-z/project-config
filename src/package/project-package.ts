@@ -1,12 +1,16 @@
 import deepmerge from 'deepmerge';
-import module from 'node:module';
-import path from 'node:path';
 import { isPresent } from '../impl/is-present.js';
-import { ProjectConfig } from '../project-config.js';
-import { ProjectDevHost } from '../project-dev-host.js';
+import { type ProjectConfig } from '../project-config.js';
+import { type ProjectDevHost } from '../project-dev-host.js';
 import { ProjectDevTool } from '../project-dev-tool.js';
-import { PackageJson } from './package.json';
-import { ProjectEntry } from './project-entry.js';
+import { type PackageJson } from './package.json';
+import {
+  isPathExport,
+  loadPackageJson,
+  PackageJson$EntryPoint,
+  PackageJson$ExportItem,
+} from './package.json.impl.js';
+import { type ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
 
 function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
@@ -103,7 +107,7 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
    * @param packageName - Dependency package name.
    *
    * @returns Promise resolved to `true` when the package found among {@link PackageJson#dependencies runtime
-   * dependencies}, to `'dev'` when it is found among {@link PAckageJson#devDependencies development dependencies},
+   * dependencies}, to `'dev'` when it is found among {@link PackageJson#devDependencies development dependencies},
    * or to `false` otherwise.
    */
   async dependsOn(packageName: string): Promise<boolean | 'dev'> {
@@ -309,84 +313,4 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
     return clone;
   }
 
-}
-
-interface PackageJson$ExportItem {
-  readonly path: '.' | `./${string}`;
-  readonly conditions: readonly string[];
-  readonly target: `./${string}`;
-}
-
-class PackageJson$EntryPoint implements PackageJson.EntryPoint {
-
-  readonly #path: '.' | `./${string}`;
-  #targetsByCondition = new Map<string, Set<`./${string}`>>();
-
-  constructor(path: '.' | `./${string}`, items: readonly PackageJson$ExportItem[]) {
-    this.#path = path;
-
-    for (const { conditions, target } of items) {
-      for (const condition of conditions.length ? conditions : ['default']) {
-        let targets = this.#targetsByCondition.get(condition);
-
-        if (!targets) {
-          targets = new Set();
-          this.#targetsByCondition.set(condition, targets);
-        }
-
-        targets.add(target);
-      }
-    }
-  }
-
-  get path(): '.' | `./${string}` {
-    return this.#path;
-  }
-
-  findConditional(...conditions: string[]): `./${string}` | undefined {
-    if (!conditions.length) {
-      conditions = ['default'];
-    }
-
-    let candidates: Set<`./${string}`> | undefined;
-
-    for (const condition of conditions.length ? conditions : ['default']) {
-      const matching = this.#targetsByCondition.get(condition);
-
-      if (!matching) {
-        return;
-      }
-
-      if (!candidates) {
-        candidates = new Set(matching);
-      } else {
-        for (const match of matching) {
-          if (!candidates.has(match)) {
-            candidates.delete(match);
-          }
-        }
-
-        if (!candidates.size) {
-          return;
-        }
-      }
-    }
-
-    if (!candidates?.size) {
-      return;
-    }
-
-    return candidates.values().next().value;
-  }
-
-}
-
-function loadPackageJson(project: ProjectConfig): PackageJson {
-  const require = module.createRequire(import.meta.url);
-
-  return require(path.join(project.rootDir, 'package.json')) as PackageJson;
-}
-
-function isPathExport(key: string): key is '.' | './${string' {
-  return key.startsWith('.');
 }
