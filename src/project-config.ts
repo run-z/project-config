@@ -2,7 +2,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import vm from 'node:vm';
-import { ProjectDevHost } from './project-dev-host.js';
+import { ProjectDevHost, ProjectDevHostType } from './project-dev-host.js';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
 import { ProjectTools$Proxy } from './project-tools.impl.js';
 import { ProjectToolDefaults, ProjectToolsInit } from './project-tools.js';
@@ -80,8 +80,8 @@ export class ProjectConfig implements ProjectInit, ProjectDevHost {
   /**
    * Always refers itself.
    */
-  get actual(): this {
-    return this;
+  get type(): ProjectDevHostType<this> {
+    return this.constructor as ProjectDevHostType<this>;
   }
 
   /**

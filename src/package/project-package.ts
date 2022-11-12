@@ -1,7 +1,7 @@
 import deepmerge from 'deepmerge';
 import { isPresent } from '../impl/is-present.js';
 import { type ProjectConfig } from '../project-config.js';
-import { type ProjectDevHost } from '../project-dev-host.js';
+import { ProjectDevHostType, type ProjectDevHost } from '../project-dev-host.js';
 import { ProjectDevTool } from '../project-dev-tool.js';
 import { type PackageJson } from './package.json';
 import {
@@ -71,8 +71,8 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
     return clone;
   }
 
-  get actual(): this {
-    return (this.constructor as typeof ProjectPackage).of(this.project) as this;
+  get type(): ProjectDevHostType<this> {
+    return this.constructor as ProjectDevHostType<this>;
   }
 
   /**

@@ -28,10 +28,10 @@ export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
   }
 
   /**
-   * Project package configuration.
+   * Gains project package configuration.
    */
-  get package(): ProjectPackage {
-    return this.host;
+  package(): ProjectPackage {
+    return this.host();
   }
 
   /**

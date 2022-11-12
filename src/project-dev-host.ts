@@ -12,7 +12,12 @@ export interface ProjectDevHost {
   get project(): ProjectConfig;
 
   /**
-   * Retrieves actual instance of itself from the project.
+   * Type of this development host.
    */
-  get actual(): this;
+  get type(): ProjectDevHostType<this>;
+}
+
+export interface ProjectDevHostType<THost extends ProjectDevHost> {
+  new (project: ProjectConfig): THost;
+  of(project: ProjectConfig): THost;
 }

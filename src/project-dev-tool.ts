@@ -1,5 +1,5 @@
 import { type ProjectConfig } from './project-config.js';
-import { type ProjectDevHost } from './project-dev-host.js';
+import { ProjectDevHostType, type ProjectDevHost } from './project-dev-host.js';
 
 /**
  * Abstract project development tool.
@@ -12,7 +12,8 @@ import { type ProjectDevHost } from './project-dev-host.js';
  */
 export abstract class ProjectDevTool<THost extends ProjectDevHost = ProjectConfig> {
 
-  #host: THost;
+  readonly #project: ProjectConfig;
+  readonly #hostType: ProjectDevHostType<THost>;
 
   /**
    * Constructs development tool.
@@ -20,21 +21,22 @@ export abstract class ProjectDevTool<THost extends ProjectDevHost = ProjectConfi
    * @param host - Development tool host.
    */
   constructor(host: THost) {
-    this.#host = host;
-  }
-
-  /**
-   * Development tool host.
-   */
-  get host(): THost {
-    return (this.#host = this.#host.actual);
+    this.#project = host.project;
+    this.#hostType = host.type;
   }
 
   /**
    * Configured project.
    */
   get project(): ProjectConfig {
-    return this.host.project;
+    return this.#project;
+  }
+
+  /**
+   * Gains actual development tools host from the {@link project}.
+   */
+  host(): THost {
+    return this.#hostType.of(this.project);
   }
 
   /**
@@ -43,7 +45,7 @@ export abstract class ProjectDevTool<THost extends ProjectDevHost = ProjectConfi
    * @returns Project clone created with its constructor.
    */
   protected clone(): this {
-    return new (this.constructor as new (host: THost) => this)(this.host);
+    return new (this.constructor as new (host: THost) => this)(this.host());
   }
 
 }

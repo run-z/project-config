@@ -104,7 +104,7 @@ export class ProjectExport extends ProjectEntry {
       return { commonJS: defaultDist };
     }
 
-    const { type } = await this.package.packageJson;
+    const { type } = await this.package().packageJson;
 
     // Detect by package type as the last resort.
     return type === 'module' ? { esm: defaultDist } : { commonJS: defaultDist };
