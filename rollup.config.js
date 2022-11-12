@@ -45,10 +45,7 @@ export default defineConfig({
         compilerOptions: {
           declarationMap: true,
         },
-        entries: {
-          jest: { file: 'project-config.jest.d.ts' },
-          rollup: { file: 'project-config.rollup.d.ts' },
-        },
+        internal: ['**/impl/**', '**/*.impl'],
       }),
     ],
   },

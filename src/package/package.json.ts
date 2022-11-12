@@ -2,9 +2,11 @@
  * Subset of [package.json](https://docs.npmjs.com/cli/v6/configuring-npm/package-json) properties.
  */
 export interface PackageJson {
-  readonly name?: string | undefined;
-  readonly version?: string | undefined;
-  readonly exports?: PackageJson.Exports | undefined;
+  readonly name?: string;
+  readonly version?: string;
+  readonly type?: 'module' | 'commonjs';
+  readonly exports?: PackageJson.Exports;
+  readonly main?: string;
   readonly dependencies?: PackageJson.Dependencies;
   readonly devDependencies?: PackageJson.Dependencies;
   readonly peerDependencies?: PackageJson.Dependencies;
@@ -21,7 +23,7 @@ export namespace PackageJson {
     /**
      * Exported path or pattern.
      */
-    readonly path: '.' | `./${string}`;
+    readonly path: EntryPath;
 
     /**
      * Searches for path or pattern matching all provided conditions.
@@ -30,8 +32,10 @@ export namespace PackageJson {
      *
      * @returns Matching path or pattern, or `undefined` when not found.
      */
-    withConditions(...conditions: string[]): `./${string}` | undefined;
+    findConditional(...conditions: string[]): `./${string}` | undefined;
   }
+
+  export type EntryPath = '.' | `./${string}`;
 
   export type Dependencies = {
     readonly [name in string]: string;
@@ -40,7 +44,7 @@ export namespace PackageJson {
   export type Exports = PathExports | TopConditionalExports | `./${string}`;
 
   export type PathExports = {
-    readonly [key in '.' | `./${string}`]: ConditionalExports | `./${string}`;
+    readonly [key in PackageJson.EntryPath]: ConditionalExports | `./${string}`;
   };
 
   export type ConditionalExports = {

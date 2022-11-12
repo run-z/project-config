@@ -1,80 +1,37 @@
-import { Stats } from 'node:fs';
-import fs from 'node:fs/promises';
 import path from 'node:path';
-import { ProjectConfig } from '../project-config.js';
-import { ProjectOutput } from '../project-output.js';
-import { PackageJson } from './package.json';
+import { type PackageJson } from './package.json';
+import { PackageJson$DefaultEntryPoint } from './package.json.impl.js';
 import { ProjectEntry } from './project-entry.js';
-import { ProjectPackage } from './project-package.js';
+import { type ProjectPackage } from './project-package.js';
 
 /**
  * Project entry corresponding to {@link PackageJson.EntryPoint package export}.
  */
 export class ProjectExport extends ProjectEntry {
 
-  /**
-   * Tries to create project entry.
-   *
-   * @param projectPackage - Project package configuration.
-   * @param init - Export initialization options.
-   *
-   * @returns Promise resolved either to project export instance, or to `undefined` if source file unspecified
-   * or can not be found.
-   */
-  static async create(
-    this: void,
-    projectPackage: ProjectPackage,
-    init: ProjectExportInit = {},
-  ): Promise<ProjectExport | undefined> {
-    const entryPoints = await projectPackage.entryPoints;
-    const { entryPoint = entryPoints.get('.') } = init;
-
-    if (!entryPoint) {
-      return;
-    }
-
-    const distFilePath =
-      entryPoint.withConditions('import') || entryPoint.withConditions('default');
-
-    if (!distFilePath) {
-      return;
-    }
-
-    const output = await projectPackage.project.output;
-    const distFile = path.relative(output.distDir, distFilePath);
-
-    const { sourceFile = await ProjectExport$detectSourceFile(projectPackage.project, distFile) } =
-      init;
-
-    if (!sourceFile) {
-      return;
-    }
-
-    return new ProjectExport({ output, entryPoint, sourceFile, distFile });
-  }
-
-  readonly #entryPoint: PackageJson.EntryPoint;
-  readonly #sourceFile: string;
-  readonly #distFile: string;
+  #entryPoint: PackageJson.EntryPoint;
 
   /**
    * Constructs project export entry of the `project`.
    *
-   * @param init - Export initialization options.
+   * @param projectPackage - Project package configuration.
+   * @param entryPoint - Package entry point to represent.
    */
-  protected constructor(
-    init: Required<ProjectExportInit> & {
-      readonly output: ProjectOutput;
-      readonly distFile: string;
-    },
+  constructor(
+    projectPackage: ProjectPackage,
+    entryPoint: PackageJson.EntryPoint = PackageJson$DefaultEntryPoint,
   ) {
-    const { output, entryPoint, sourceFile, distFile } = init;
-
-    super(output);
+    super(projectPackage);
 
     this.#entryPoint = entryPoint;
-    this.#sourceFile = sourceFile;
-    this.#distFile = distFile;
+  }
+
+  protected override clone(): this {
+    const clone = super.clone();
+
+    clone.#entryPoint = this.#entryPoint;
+
+    return clone;
   }
 
   /**
@@ -82,6 +39,93 @@ export class ProjectExport extends ProjectEntry {
    */
   get entryPoint(): PackageJson.EntryPoint {
     return this.#entryPoint;
+  }
+
+  protected override async detectDistFiles(): Promise<ProjectEntry.DistFiles | null> {
+    const esm = await this.#findDistFile('import');
+    const commonJS = await this.#findDistFile('require');
+    const defaultDist = await this.#findDistFile('default');
+
+    if (esm) {
+      // Explicit ESM entry point.
+      if (commonJS) {
+        // ...and explicit CommonJS entry point.
+        return {
+          esm,
+          commonJS,
+        };
+      }
+
+      if (!defaultDist || defaultDist === esm) {
+        // No default entry, or it is the same as ESM.
+        // No CommonJS distribution.
+        return { esm };
+      }
+
+      // Use default entry point as CommonJS one.
+      return { esm, commonJS: defaultDist };
+    }
+
+    if (commonJS) {
+      // Explicit CommonJS entry only.
+      if (!defaultDist || defaultDist === commonJS) {
+        // No default entry, or it is the same as CommonJS.
+        // No ESM distribution.
+        return { commonJS };
+      }
+
+      // Use default entry point as ESM one.
+      return { esm: defaultDist, commonJS };
+    }
+
+    if (!defaultDist) {
+      // No suitable entries.
+      return null;
+    }
+
+    // No explicit ESM or CommonJS entries.
+    // Detect the type of default one.
+
+    if (defaultDist.endsWith('.mjs')) {
+      // Explicitly marked as ESM.
+      return { esm: defaultDist };
+    }
+    if (defaultDist.endsWith('.cjs')) {
+      // Explicitly marked as CommonJS.
+      return { commonJS: defaultDist };
+    }
+
+    const { type } = await this.package().packageJson;
+
+    // Detect by package type as the last resort.
+    return type === 'module' ? { esm: defaultDist } : { commonJS: defaultDist };
+  }
+
+  async #findDistFile(condition: string): Promise<string | undefined> {
+    const file = this.entryPoint.findConditional(condition);
+
+    if (!file) {
+      return;
+    }
+
+    const filePath = path.resolve(this.project.rootDir, file);
+    const { distDir } = await this.project.output;
+
+    return filePath.startsWith(`${distDir}${path.sep}`)
+      ? path.relative(distDir, filePath)
+      : undefined;
+  }
+
+  protected override async detectTypesFile(): Promise<string | null> {
+    const types = this.findConditional('types');
+
+    if (!types) {
+      return await super.detectTypesFile();
+    }
+
+    const { distDir } = await this.project.output;
+
+    return path.relative(distDir, types);
   }
 
   /**
@@ -93,101 +137,13 @@ export class ProjectExport extends ProjectEntry {
    *
    * @returns Matching path or pattern, or `undefined` when not found.
    */
-  withConditions(...conditions: string[]): `./${string}` | undefined {
+  findConditional(...conditions: string[]): `./${string}` | undefined {
     return (
-      this.entryPoint.withConditions(...conditions)
-      || this.entryPoint.withConditions(
+      this.entryPoint.findConditional(...conditions)
+      || this.entryPoint.findConditional(
         ...conditions.filter(condition => condition !== 'import' && condition !== 'default'),
       )
     );
   }
 
-  get isMain(): boolean {
-    return this.entryPoint.path === '.';
-  }
-
-  get sourceFile(): string {
-    return this.#sourceFile;
-  }
-
-  get distFile(): string {
-    return this.#distFile;
-  }
-
-  toExport(): this {
-    return this;
-  }
-
-}
-
-/**
- * Project export initialization options.
- */
-export interface ProjectExportInit {
-  /**
-   * Package entry point the project export represents.
-   *
-   * The one corresponding to the
-   * [main entry point](https://nodejs.org/dist/latest/docs/api/packages.html#main-entry-point-export) (`"."`) will be
-   * used when omitted.
-   */
-  readonly entryPoint?: PackageJson.EntryPoint | undefined;
-
-  /**
-   * Source file that will be transpiled to exported one.
-   *
-   * Will be reconstructed by export path when omitted.
-   */
-  readonly sourceFile?: string | undefined;
-}
-
-async function ProjectExport$detectSourceFile(
-  project: ProjectConfig,
-  distFile: string,
-): Promise<string | undefined> {
-  const ext = path.extname(distFile);
-  const name = ext ? distFile.slice(0, -ext.length) : ext;
-  let parts = name.split(path.sep);
-  const lastPart = parts[parts.length - 1];
-  const lastParts = lastPart.split('.').slice(1);
-
-  parts = [...parts.slice(0, -1), ...lastParts];
-
-  return await ProjectExport$findSourceFile(project, [...parts]);
-}
-
-const SOURCE_FILE_NAMES = [null, 'main', 'mod', 'index'];
-const SOURCE_FILE_EXTENSIONS = ['.ts', '.mts', '.cts'];
-
-async function ProjectExport$findSourceFile(
-  project: ProjectConfig,
-  searchPath: readonly string[],
-): Promise<string | undefined> {
-  for (const fileName of SOURCE_FILE_NAMES) {
-    for (const extension of SOURCE_FILE_EXTENSIONS) {
-      let filePath: string[];
-
-      if (fileName) {
-        filePath = [...searchPath, `${fileName}${extension}`];
-      } else if (searchPath.length) {
-        filePath = [...searchPath.slice(0, -1), searchPath[searchPath.length - 1] + extension];
-      } else {
-        continue;
-      }
-
-      let stat: Stats;
-
-      try {
-        stat = await fs.stat(path.join(project.sourceDir, ...filePath));
-      } catch {
-        continue;
-      }
-
-      if (stat.isFile()) {
-        return path.join(...filePath);
-      }
-    }
-  }
-
-  return;
 }

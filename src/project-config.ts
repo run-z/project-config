@@ -2,6 +2,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import vm from 'node:vm';
+import { ProjectDevHost, ProjectDevHostType } from './project-dev-host.js';
 import { ProjectOutput, ProjectOutputInit } from './project-output.js';
 import { ProjectTools$Proxy } from './project-tools.impl.js';
 import { ProjectToolDefaults, ProjectToolsInit } from './project-tools.js';
@@ -9,7 +10,7 @@ import { ProjectToolDefaults, ProjectToolsInit } from './project-tools.js';
 /**
  * Project configuration.
  */
-export class ProjectConfig implements ProjectInit {
+export class ProjectConfig implements ProjectInit, ProjectDevHost {
 
   /**
    * Loads project configuration from specified module.
@@ -70,12 +71,17 @@ export class ProjectConfig implements ProjectInit {
   }
 
   /**
-   * A reference to itself.
-   *
-   * Allows to use project configuration instance as initialization options.
+   * Reference to itself.
    */
   get project(): this {
     return this;
+  }
+
+  /**
+   * Always refers itself.
+   */
+  get type(): ProjectDevHostType<this> {
+    return this.constructor as ProjectDevHostType<this>;
   }
 
   /**

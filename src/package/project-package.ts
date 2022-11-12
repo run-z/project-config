@@ -1,8 +1,16 @@
 import deepmerge from 'deepmerge';
-import module from 'node:module';
-import path from 'node:path';
-import { ProjectConfig } from '../project-config.js';
-import { PackageJson } from './package.json';
+import { isPresent } from '../impl/is-present.js';
+import { type ProjectConfig } from '../project-config.js';
+import { ProjectDevHostType, type ProjectDevHost } from '../project-dev-host.js';
+import { ProjectDevTool } from '../project-dev-tool.js';
+import { type PackageJson } from './package.json';
+import {
+  isPathExport,
+  loadPackageJson,
+  PackageJson$EntryPoint,
+  PackageJson$ExportItem,
+} from './package.json.impl.js';
+import { ProjectEntry$, ProjectEntry$Main } from './project-entry.impl.js';
 import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
 
@@ -22,7 +30,7 @@ function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
 /**
  * Package configuration constructed by `package.json` contents.
  */
-export class ProjectPackage {
+export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
 
   /**
    * Gains package configuration of the project.
@@ -37,12 +45,15 @@ export class ProjectPackage {
     return project.get(ProjectPackage$create);
   }
 
-  readonly #project: ProjectConfig;
   #autoloaded = true;
   #customPackageJson: () => PackageJson | PromiseLike<PackageJson>;
+  #customEntries?: Map<PackageJson.EntryPath, ProjectEntry>;
+
   #packageJson?: Promise<PackageJson>;
-  #entryPoints?: Promise<ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint>>;
-  #exports?: Promise<ReadonlyMap<string, ProjectExport>>;
+  #entryPoints?: Promise<ReadonlyMap<PackageJson.EntryPath, PackageJson.EntryPoint>>;
+  #exports?: Promise<ReadonlyMap<PackageJson.EntryPath, ProjectExport>>;
+  #entries?: Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry>>;
+  #generatedEntries?: Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry.Generated>>;
   #mainEntry?: Promise<ProjectEntry>;
 
   /**
@@ -51,24 +62,22 @@ export class ProjectPackage {
    * @param project - Configured project.
    */
   constructor(project: ProjectConfig) {
-    this.#project = project;
+    super(project);
     this.#customPackageJson = () => ({});
   }
 
-  protected clone(): ProjectPackage {
-    const clone = new ProjectPackage(this.project);
+  protected override clone(): this {
+    const clone = super.clone();
 
     clone.#autoloaded = this.#autoloaded;
     clone.#customPackageJson = this.#customPackageJson;
+    clone.#customEntries = this.#customEntries;
 
     return clone;
   }
 
-  /**
-   * Configured project.
-   */
-  get project(): ProjectConfig {
-    return this.#project;
+  get type(): ProjectDevHostType<this> {
+    return this.constructor as ProjectDevHostType<this>;
   }
 
   /**
@@ -103,7 +112,7 @@ export class ProjectPackage {
    * @param packageName - Dependency package name.
    *
    * @returns Promise resolved to `true` when the package found among {@link PackageJson#dependencies runtime
-   * dependencies}, to `'dev'` when it is found among {@link PAckageJson#devDependencies development dependencies},
+   * dependencies}, to `'dev'` when it is found among {@link PackageJson#devDependencies development dependencies},
    * or to `false` otherwise.
    */
   async dependsOn(packageName: string): Promise<boolean | 'dev'> {
@@ -122,12 +131,12 @@ export class ProjectPackage {
   /**
    * Read-only map of package entry points with exported paths or patterns as their keys.
    */
-  get entryPoints(): Promise<ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint>> {
+  get entryPoints(): Promise<ReadonlyMap<PackageJson.EntryPath, PackageJson.EntryPoint>> {
     return (this.#entryPoints ??= this.#buildEntryPoints());
   }
 
-  async #buildEntryPoints(): Promise<ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint>> {
-    const items = new Map<'.' | `./${string}`, PackageJson$ExportItem[]>();
+  async #buildEntryPoints(): Promise<ReadonlyMap<PackageJson.EntryPath, PackageJson.EntryPoint>> {
+    const items = new Map<PackageJson.EntryPath, PackageJson$ExportItem[]>();
 
     for await (const item of this.#listExports()) {
       const found = items.get(item.path);
@@ -145,9 +154,19 @@ export class ProjectPackage {
   }
 
   async *#listExports(): AsyncIterableIterator<PackageJson$ExportItem> {
-    const { exports } = await this.packageJson;
+    const { exports, main } = await this.packageJson;
 
     if (!exports) {
+      if (!main) {
+        return;
+      }
+
+      yield {
+        path: '.',
+        conditions: [],
+        target: main.startsWith('./') ? (main as `./${string}`) : `./${main}`,
+      };
+
       return;
     }
 
@@ -174,7 +193,7 @@ export class ProjectPackage {
   }
 
   *#pathExports(
-    path: '.' | `./${string}`,
+    path: PackageJson.EntryPath,
     conditions: readonly string[],
     exports: PackageJson.ConditionalExports | `./${string}`,
   ): IterableIterator<PackageJson$ExportItem> {
@@ -193,54 +212,119 @@ export class ProjectPackage {
    * Promise resolved to the main entry of the project.
    */
   get mainEntry(): Promise<ProjectEntry> {
-    if (!this.#mainEntry) {
-      this.#mainEntry = this.#findMainEntry();
-    }
+    return (this.#mainEntry ??= this.#findMainEntry());
+  }
 
-    return this.#mainEntry;
+  /**
+   * Assigns main project entry.
+   *
+   * @param entry - New main entry to assign.
+   *
+   * @returns Updated instance.
+   */
+  withMainEntry(entry: ProjectEntry): this {
+    return this.withEntry('.', entry);
   }
 
   async #findMainEntry(): Promise<ProjectEntry> {
-    const entries = await this.entries;
-
-    for (const entry of entries.values()) {
-      if (entry.isMain) {
-        return entry;
-      }
-    }
-
-    throw new ReferenceError('No main entry');
+    return await this.entryFor('.');
   }
 
   /**
    * Promise resolved to project entries map with their {@link ProjectEntry.name names} as keys.
    */
-  get entries(): Promise<ReadonlyMap<string, ProjectEntry>> {
-    return this.exports;
+  get entries(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry>> {
+    return (this.#entries ??= this.#buildEntries());
+  }
+
+  async #buildEntries(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry>> {
+    const exports = await this.exports;
+    let entries: Map<PackageJson.EntryPath, ProjectEntry> | undefined;
+
+    if (this.#customEntries) {
+      entries = new Map(exports);
+      for (const [path, entry] of this.#customEntries) {
+        entries.set(path, entry);
+      }
+    }
+    if (entries ? !entries.has('.') : !exports.has('.')) {
+      entries ??= new Map(exports);
+      entries.set('.', new ProjectEntry$Main(this));
+    }
+
+    return entries ?? exports;
+  }
+
+  /**
+   * Gains project entry for the given export path.
+   *
+   * @param path - Target export path.
+   *
+   * @returns Corresponding project entry, or new one if not exists yet.
+   */
+  async entryFor(path: PackageJson.EntryPath): Promise<ProjectEntry> {
+    const entries = await this.entries;
+
+    return entries.get(path) ?? new ProjectEntry$(this);
+  }
+
+  /**
+   * Assigns project entry for the given export path.
+   *
+   * @param path - Export path of the entry.
+   * @param entry - Project entry to assign.
+   *
+   * @returns Updated instance.
+   */
+  withEntry(path: PackageJson.EntryPath, entry: ProjectEntry): this {
+    const clone = this.clone();
+
+    clone.#customEntries = this.#customEntries ? new Map(this.#customEntries) : new Map();
+    clone.#customEntries.set(path, entry);
+
+    return clone;
+  }
+
+  /**
+   * Promise resolved to {@link ProjectEntry#isGEnerated generated} project entries with their
+   * {@link ProjectEntry.name names} as keys.
+   */
+  get generatedEntries(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry.Generated>> {
+    return (this.#generatedEntries ??= this.#detectGeneratedEntries());
+  }
+
+  async #detectGeneratedEntries(): Promise<
+    ReadonlyMap<PackageJson.EntryPath, ProjectEntry.Generated>
+  > {
+    const allEntries = await this.entries;
+    const entries = await Promise.all(
+      [...allEntries].map(
+        async ([name, entry]): Promise<
+          [PackageJson.EntryPath, ProjectEntry.Generated] | undefined
+        > => {
+          const generated = await entry.toGenerated();
+
+          return generated && [name, generated];
+        },
+      ),
+    );
+
+    return new Map(entries.filter(isPresent));
   }
 
   /**
    * Promise resolved to project exports map with their {@link ProjectEntry.name names} as keys.
    */
-  get exports(): Promise<ReadonlyMap<string, ProjectExport>> {
-    if (!this.#exports) {
-      this.#exports = this.#loadExports();
-    }
-
-    return this.#exports;
+  get exports(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectExport>> {
+    return (this.#exports ??= this.#detectExports());
   }
 
-  async #loadExports(): Promise<ReadonlyMap<string, ProjectExport>> {
+  async #detectExports(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectExport>> {
     const entryPoints = await this.entryPoints;
-    const entries = await Promise.all(
-      [...entryPoints.values()].map(async entryPoint => {
-        const entry = await ProjectExport.create(this, { entryPoint });
 
-        return entry ? ([entry.name, entry] as const) : undefined;
-      }),
+    return new Map(
+      [...entryPoints].map(([name, entryPoint]) => [name, new ProjectExport(this, entryPoint)]),
     );
-
-    return new Map(entries.filter(entry => !!entry) as (readonly [string, ProjectExport])[]);
   }
 
   /**
@@ -252,7 +336,7 @@ export class ProjectPackage {
    *
    * @returns Updated instance.
    */
-  replacePackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+  replacePackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): this {
     const clone = this.clone();
 
     clone.#autoloaded = false;
@@ -270,7 +354,7 @@ export class ProjectPackage {
    *
    * @returns Updated instance.
    */
-  autoloadPackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+  autoloadPackageJson(packageJson: PackageJson | PromiseLike<PackageJson>): this {
     const clone = this.clone();
 
     clone.#autoloaded = true;
@@ -286,7 +370,7 @@ export class ProjectPackage {
    *
    * @returns Updated instance.
    */
-  extendPackageJson(extension: PackageJson | PromiseLike<PackageJson>): ProjectPackage {
+  extendPackageJson(extension: PackageJson | PromiseLike<PackageJson>): this {
     const clone = this.clone();
     const prevPackageJson = this.#customPackageJson;
 
@@ -295,84 +379,4 @@ export class ProjectPackage {
     return clone;
   }
 
-}
-
-interface PackageJson$ExportItem {
-  readonly path: '.' | `./${string}`;
-  readonly conditions: readonly string[];
-  readonly target: `./${string}`;
-}
-
-class PackageJson$EntryPoint implements PackageJson.EntryPoint {
-
-  readonly #path: '.' | `./${string}`;
-  #targetsByCondition = new Map<string, Set<`./${string}`>>();
-
-  constructor(path: '.' | `./${string}`, items: readonly PackageJson$ExportItem[]) {
-    this.#path = path;
-
-    for (const { conditions, target } of items) {
-      for (const condition of conditions.length ? conditions : ['default']) {
-        let targets = this.#targetsByCondition.get(condition);
-
-        if (!targets) {
-          targets = new Set();
-          this.#targetsByCondition.set(condition, targets);
-        }
-
-        targets.add(target);
-      }
-    }
-  }
-
-  get path(): '.' | `./${string}` {
-    return this.#path;
-  }
-
-  withConditions(...conditions: string[]): `./${string}` | undefined {
-    if (!conditions.length) {
-      conditions = ['default'];
-    }
-
-    let candidates: Set<`./${string}`> | undefined;
-
-    for (const condition of conditions.length ? conditions : ['default']) {
-      const matching = this.#targetsByCondition.get(condition);
-
-      if (!matching) {
-        return;
-      }
-
-      if (!candidates) {
-        candidates = new Set(matching);
-      } else {
-        for (const match of matching) {
-          if (!candidates.has(match)) {
-            candidates.delete(match);
-          }
-        }
-
-        if (!candidates.size) {
-          return;
-        }
-      }
-    }
-
-    if (!candidates?.size) {
-      return;
-    }
-
-    return candidates.values().next().value;
-  }
-
-}
-
-function loadPackageJson(project: ProjectConfig): PackageJson {
-  const require = module.createRequire(import.meta.url);
-
-  return require(path.join(project.rootDir, 'package.json')) as PackageJson;
-}
-
-function isPathExport(key: string): key is '.' | './${string' {
-  return key.startsWith('.');
 }
