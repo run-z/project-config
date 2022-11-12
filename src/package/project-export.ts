@@ -1,27 +1,37 @@
 import path from 'node:path';
-import { ProjectConfig } from '../project-config.js';
-import { PackageJson } from './package.json';
+import { type PackageJson } from './package.json';
 import { ProjectEntry } from './project-entry.js';
-import { ProjectPackage } from './project-package.js';
+import { type ProjectPackage } from './project-package.js';
 
 /**
  * Project entry corresponding to {@link PackageJson.EntryPoint package export}.
  */
 export class ProjectExport extends ProjectEntry {
 
-  readonly #entryPoint: PackageJson.EntryPoint;
+  #entryPoint: PackageJson.EntryPoint;
   #distFiles?: Promise<ProjectEntry.DistFiles | null>;
 
   /**
    * Constructs project export entry of the `project`.
    *
-   * @param project - Configured project.
+   * @param projectPackage - Project package configuration.
    * @param entryPoint - Package entry point to represent.
    */
-  constructor(project: ProjectConfig, entryPoint: PackageJson.EntryPoint) {
-    super(project);
+  constructor(
+    projectPackage: ProjectPackage,
+    entryPoint: PackageJson.EntryPoint = PackageJson$DefaultEntryPoint,
+  ) {
+    super(projectPackage);
 
     this.#entryPoint = entryPoint;
+  }
+
+  protected override clone(): this {
+    const clone = super.clone();
+
+    clone.#entryPoint = this.#entryPoint;
+
+    return clone;
   }
 
   /**
@@ -93,7 +103,7 @@ export class ProjectExport extends ProjectEntry {
       return { commonJS: defaultDist };
     }
 
-    const { type } = await ProjectPackage.of(this.project).packageJson;
+    const { type } = await this.package.packageJson;
 
     // Detect by package type as the last resort.
     return type === 'module' ? { esm: defaultDist } : { commonJS: defaultDist };
@@ -145,3 +155,10 @@ export class ProjectExport extends ProjectEntry {
   }
 
 }
+
+const PackageJson$DefaultEntryPoint: PackageJson.EntryPoint = {
+  path: '.',
+  findConditional(): undefined {
+    return;
+  },
+};

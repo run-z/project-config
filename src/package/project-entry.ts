@@ -1,16 +1,17 @@
-import { Stats } from 'node:fs';
+import { type Stats } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { ProjectConfig } from '../project-config.js';
+import { type ProjectConfig } from '../project-config.js';
 import { ProjectDevTool } from '../project-dev-tool.js';
-import { ProjectOutput } from '../project-output.js';
+import { type ProjectOutput } from '../project-output.js';
+import { type ProjectPackage } from './project-package.js';
 
 /**
  * Abstract project entry configuration.
  *
  * @typeParam TEntry - Entry type.
  */
-export abstract class ProjectEntry extends ProjectDevTool {
+export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
 
   #name?: Promise<string | null>;
   #sourceFile?: Promise<string | null>;
@@ -24,6 +25,13 @@ export abstract class ProjectEntry extends ProjectDevTool {
     clone.#typesFile = this.#typesFile;
 
     return clone;
+  }
+
+  /**
+   * Project package configuration.
+   */
+  get package(): ProjectPackage {
+    return this.host;
   }
 
   /**

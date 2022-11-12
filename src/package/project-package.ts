@@ -248,10 +248,7 @@ export class ProjectPackage extends ProjectDevTool {
     const entryPoints = await this.entryPoints;
 
     return new Map(
-      [...entryPoints].map(([name, entryPoint]) => [
-        name,
-        new ProjectExport(this.project, entryPoint),
-      ]),
+      [...entryPoints].map(([name, entryPoint]) => [name, new ProjectExport(this, entryPoint)]),
     );
   }
 

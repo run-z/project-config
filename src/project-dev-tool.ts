@@ -6,25 +6,36 @@ import { ProjectConfig } from './project-config.js';
  * Development tool instances expected to be immutable.
  *
  * The {@link ProjectDevTool#clone} method can be used to create project clones prior to updating it.
+ *
+ * @typeParam THost - Type of development tool host.
  */
-export abstract class ProjectDevTool {
+export abstract class ProjectDevTool<
+  THost extends { readonly project: ProjectConfig } = ProjectConfig,
+> {
 
-  readonly #project: ProjectConfig;
+  readonly #host: THost;
 
   /**
    * Constructs development tool.
    *
-   * @param project - Configured project.
+   * @param host - Development tool host.
    */
-  constructor(project: ProjectConfig) {
-    this.#project = project;
+  constructor(host: THost) {
+    this.#host = host;
+  }
+
+  /**
+   * Development tool host.
+   */
+  get host(): THost {
+    return this.#host;
   }
 
   /**
    * Configured project.
    */
   get project(): ProjectConfig {
-    return this.#project;
+    return this.host.project;
   }
 
   /**
@@ -33,7 +44,7 @@ export abstract class ProjectDevTool {
    * @returns Project clone created with its constructor.
    */
   protected clone(): this {
-    return new (this.constructor as new (project: ProjectConfig) => this)(this.project);
+    return new (this.constructor as new (host: THost) => this)(this.host);
   }
 
 }
