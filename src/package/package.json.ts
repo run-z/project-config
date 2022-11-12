@@ -2,10 +2,11 @@
  * Subset of [package.json](https://docs.npmjs.com/cli/v6/configuring-npm/package-json) properties.
  */
 export interface PackageJson {
-  readonly name?: string | undefined;
-  readonly version?: string | undefined;
+  readonly name?: string;
+  readonly version?: string;
   readonly type?: 'module' | 'commonjs';
-  readonly exports?: PackageJson.Exports | undefined;
+  readonly exports?: PackageJson.Exports;
+  readonly main?: string;
   readonly dependencies?: PackageJson.Dependencies;
   readonly devDependencies?: PackageJson.Dependencies;
   readonly peerDependencies?: PackageJson.Dependencies;

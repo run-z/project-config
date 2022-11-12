@@ -154,9 +154,19 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
   }
 
   async *#listExports(): AsyncIterableIterator<PackageJson$ExportItem> {
-    const { exports } = await this.packageJson;
+    const { exports, main } = await this.packageJson;
 
     if (!exports) {
+      if (!main) {
+        return;
+      }
+
+      yield {
+        path: '.',
+        conditions: [],
+        target: main.startsWith('./') ? (main as `./${string}`) : `./${main}`,
+      };
+
       return;
     }
 
