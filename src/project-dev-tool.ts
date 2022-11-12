@@ -1,4 +1,5 @@
-import { ProjectConfig } from './project-config.js';
+import { type ProjectConfig } from './project-config.js';
+import { type ProjectDevHost } from './project-dev-host.js';
 
 /**
  * Abstract project development tool.
@@ -9,9 +10,7 @@ import { ProjectConfig } from './project-config.js';
  *
  * @typeParam THost - Type of development tool host.
  */
-export abstract class ProjectDevTool<
-  THost extends { readonly project: ProjectConfig } = ProjectConfig,
-> {
+export abstract class ProjectDevTool<THost extends ProjectDevHost = ProjectConfig> {
 
   readonly #host: THost;
 
@@ -28,7 +27,7 @@ export abstract class ProjectDevTool<
    * Development tool host.
    */
   get host(): THost {
-    return this.#host;
+    return this.#host.actual;
   }
 
   /**

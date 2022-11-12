@@ -5,6 +5,7 @@ export * from './gitignore/mod.js';
 export * from './jest/mod.js';
 export * from './package/mod.js';
 export * from './project-config.js';
+export * from './project-dev-host.js';
 export * from './project-dev-tool.js';
 export * from './project-output.js';
 export * from './project-tools.js';

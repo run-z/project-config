@@ -3,6 +3,7 @@ import module from 'node:module';
 import path from 'node:path';
 import { isPresent } from '../impl/is-present.js';
 import { ProjectConfig } from '../project-config.js';
+import { ProjectDevHost } from '../project-dev-host.js';
 import { ProjectDevTool } from '../project-dev-tool.js';
 import { PackageJson } from './package.json';
 import { ProjectEntry } from './project-entry.js';
@@ -24,7 +25,7 @@ function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
 /**
  * Package configuration constructed by `package.json` contents.
  */
-export class ProjectPackage extends ProjectDevTool {
+export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
 
   /**
    * Gains package configuration of the project.
@@ -64,6 +65,10 @@ export class ProjectPackage extends ProjectDevTool {
     clone.#customPackageJson = this.#customPackageJson;
 
     return clone;
+  }
+
+  get actual(): this {
+    return (this.constructor as typeof ProjectPackage).of(this.project) as this;
   }
 
   /**
