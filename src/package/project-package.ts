@@ -286,7 +286,7 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
   }
 
   /**
-   * Promise resolved to {@link ProjectEntry#isGEnerated generated} project entries with their
+   * Promise resolved to {@link ProjectEntry#isGenerated generated} project entries with their
    * {@link ProjectEntry.name names} as keys.
    */
   get generatedEntries(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry.Generated>> {
