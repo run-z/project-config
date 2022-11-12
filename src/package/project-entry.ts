@@ -14,6 +14,7 @@ import { type ProjectPackage } from './project-package.js';
 export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
 
   #name?: Promise<string | null>;
+  #distFiles?: Promise<ProjectEntry.DistFiles | null>;
   #sourceFile?: Promise<string | null>;
   #typesFile?: Promise<string | null>;
 
@@ -21,6 +22,7 @@ export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
     const clone = super.clone();
 
     clone.#name = this.#name;
+    clone.#distFiles = this.#distFiles;
     clone.#sourceFile = this.#sourceFile;
     clone.#typesFile = this.#typesFile;
 
@@ -32,13 +34,6 @@ export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
    */
   package(): ProjectPackage {
     return this.host();
-  }
-
-  /**
-   * Whether this is the main entry.
-   */
-  get isMain(): boolean {
-    return false;
   }
 
   /**
@@ -190,7 +185,26 @@ export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
    *
    * May be `null` when distribution files missing.
    */
-  abstract get distFiles(): Promise<ProjectEntry.DistFiles | null>;
+  get distFiles(): Promise<ProjectEntry.DistFiles | null> {
+    return (this.#distFiles ??= this.detectDistFiles());
+  }
+
+  /**
+   * Assigns distribution files.
+   *
+   * @param distFiles - New distribution files, or `null` to omit entry generation.
+   *
+   * @returns Updated instance.
+   */
+  withDistFiles(distFiles: ProjectEntry.DistFiles | null): this {
+    const clone = this.clone();
+
+    clone.#distFiles = Promise.resolve(distFiles);
+
+    return clone;
+  }
+
+  protected abstract detectDistFiles(): Promise<ProjectEntry.DistFiles | null>;
 
   async #distFile(): Promise<string | undefined> {
     const distFiles = await this.distFiles;

@@ -10,7 +10,6 @@ import { type ProjectPackage } from './project-package.js';
 export class ProjectExport extends ProjectEntry {
 
   #entryPoint: PackageJson.EntryPoint;
-  #distFiles?: Promise<ProjectEntry.DistFiles | null>;
 
   /**
    * Constructs project export entry of the `project`.
@@ -42,15 +41,7 @@ export class ProjectExport extends ProjectEntry {
     return this.#entryPoint;
   }
 
-  override get isMain(): boolean {
-    return this.entryPoint.path === '.';
-  }
-
-  override get distFiles(): Promise<ProjectEntry.DistFiles | null> {
-    return (this.#distFiles ??= this.#detectDistFiles());
-  }
-
-  async #detectDistFiles(): Promise<ProjectEntry.DistFiles | null> {
+  protected override async detectDistFiles(): Promise<ProjectEntry.DistFiles | null> {
     const esm = await this.#findDistFile('import');
     const commonJS = await this.#findDistFile('require');
     const defaultDist = await this.#findDistFile('default');

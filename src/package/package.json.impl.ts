@@ -12,10 +12,10 @@ export const PackageJson$DefaultEntryPoint: PackageJson.EntryPoint = {
 
 export class PackageJson$EntryPoint implements PackageJson.EntryPoint {
 
-  readonly #path: '.' | `./${string}`;
+  readonly #path: PackageJson.EntryPath;
   #targetsByCondition = new Map<string, Set<`./${string}`>>();
 
-  constructor(path: '.' | `./${string}`, items: readonly PackageJson$ExportItem[]) {
+  constructor(path: PackageJson.EntryPath, items: readonly PackageJson$ExportItem[]) {
     this.#path = path;
 
     for (const { conditions, target } of items) {
@@ -32,7 +32,7 @@ export class PackageJson$EntryPoint implements PackageJson.EntryPoint {
     }
   }
 
-  get path(): '.' | `./${string}` {
+  get path(): PackageJson.EntryPath {
     return this.#path;
   }
 
@@ -75,7 +75,7 @@ export class PackageJson$EntryPoint implements PackageJson.EntryPoint {
 }
 
 export interface PackageJson$ExportItem {
-  readonly path: '.' | `./${string}`;
+  readonly path: PackageJson.EntryPath;
   readonly conditions: readonly string[];
   readonly target: `./${string}`;
 }

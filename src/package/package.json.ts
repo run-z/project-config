@@ -22,7 +22,7 @@ export namespace PackageJson {
     /**
      * Exported path or pattern.
      */
-    readonly path: '.' | `./${string}`;
+    readonly path: EntryPath;
 
     /**
      * Searches for path or pattern matching all provided conditions.
@@ -34,6 +34,8 @@ export namespace PackageJson {
     findConditional(...conditions: string[]): `./${string}` | undefined;
   }
 
+  export type EntryPath = '.' | `./${string}`;
+
   export type Dependencies = {
     readonly [name in string]: string;
   };
@@ -41,7 +43,7 @@ export namespace PackageJson {
   export type Exports = PathExports | TopConditionalExports | `./${string}`;
 
   export type PathExports = {
-    readonly [key in '.' | `./${string}`]: ConditionalExports | `./${string}`;
+    readonly [key in PackageJson.EntryPath]: ConditionalExports | `./${string}`;
   };
 
   export type ConditionalExports = {

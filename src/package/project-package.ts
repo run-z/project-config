@@ -10,7 +10,8 @@ import {
   PackageJson$EntryPoint,
   PackageJson$ExportItem,
 } from './package.json.impl.js';
-import { type ProjectEntry } from './project-entry.js';
+import { ProjectEntry$, ProjectEntry$Main } from './project-entry.impl.js';
+import { ProjectEntry } from './project-entry.js';
 import { ProjectExport } from './project-export.js';
 
 function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
@@ -46,10 +47,13 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
 
   #autoloaded = true;
   #customPackageJson: () => PackageJson | PromiseLike<PackageJson>;
+  #customEntries?: Map<PackageJson.EntryPath, ProjectEntry>;
+
   #packageJson?: Promise<PackageJson>;
-  #entryPoints?: Promise<ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint>>;
-  #exports?: Promise<ReadonlyMap<string, ProjectExport>>;
-  #generatedEntries?: Promise<ReadonlyMap<string, ProjectEntry.Generated>>;
+  #entryPoints?: Promise<ReadonlyMap<PackageJson.EntryPath, PackageJson.EntryPoint>>;
+  #exports?: Promise<ReadonlyMap<PackageJson.EntryPath, ProjectExport>>;
+  #entries?: Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry>>;
+  #generatedEntries?: Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry.Generated>>;
   #mainEntry?: Promise<ProjectEntry>;
 
   /**
@@ -67,6 +71,7 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
 
     clone.#autoloaded = this.#autoloaded;
     clone.#customPackageJson = this.#customPackageJson;
+    clone.#customEntries = this.#customEntries;
 
     return clone;
   }
@@ -126,12 +131,12 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
   /**
    * Read-only map of package entry points with exported paths or patterns as their keys.
    */
-  get entryPoints(): Promise<ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint>> {
+  get entryPoints(): Promise<ReadonlyMap<PackageJson.EntryPath, PackageJson.EntryPoint>> {
     return (this.#entryPoints ??= this.#buildEntryPoints());
   }
 
-  async #buildEntryPoints(): Promise<ReadonlyMap<'.' | `./${string}`, PackageJson.EntryPoint>> {
-    const items = new Map<'.' | `./${string}`, PackageJson$ExportItem[]>();
+  async #buildEntryPoints(): Promise<ReadonlyMap<PackageJson.EntryPath, PackageJson.EntryPoint>> {
+    const items = new Map<PackageJson.EntryPath, PackageJson$ExportItem[]>();
 
     for await (const item of this.#listExports()) {
       const found = items.get(item.path);
@@ -178,7 +183,7 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
   }
 
   *#pathExports(
-    path: '.' | `./${string}`,
+    path: PackageJson.EntryPath,
     conditions: readonly string[],
     exports: PackageJson.ConditionalExports | `./${string}`,
   ): IterableIterator<PackageJson$ExportItem> {
@@ -197,45 +202,96 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
    * Promise resolved to the main entry of the project.
    */
   get mainEntry(): Promise<ProjectEntry> {
-    if (!this.#mainEntry) {
-      this.#mainEntry = this.#findMainEntry();
-    }
+    return (this.#mainEntry ??= this.#findMainEntry());
+  }
 
-    return this.#mainEntry;
+  /**
+   * Assigns main project entry.
+   *
+   * @param entry - New main entry to assign.
+   *
+   * @returns Updated instance.
+   */
+  withMainEntry(entry: ProjectEntry): this {
+    return this.withEntry('.', entry);
   }
 
   async #findMainEntry(): Promise<ProjectEntry> {
-    const entries = await this.entries;
-
-    for (const entry of entries.values()) {
-      if (entry.isMain) {
-        return entry;
-      }
-    }
-
-    throw new ReferenceError('No main entry');
+    return await this.entryFor('.');
   }
 
   /**
    * Promise resolved to project entries map with their {@link ProjectEntry.name names} as keys.
    */
-  get entries(): Promise<ReadonlyMap<string, ProjectEntry>> {
-    return this.exports;
+  get entries(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry>> {
+    return (this.#entries ??= this.#buildEntries());
+  }
+
+  async #buildEntries(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry>> {
+    const exports = await this.exports;
+    let entries: Map<PackageJson.EntryPath, ProjectEntry> | undefined;
+
+    if (this.#customEntries) {
+      entries = new Map(exports);
+      for (const [path, entry] of this.#customEntries) {
+        entries.set(path, entry);
+      }
+    }
+    if (entries ? !entries.has('.') : !exports.has('.')) {
+      entries ??= new Map(exports);
+      entries.set('.', new ProjectEntry$Main(this));
+    }
+
+    return entries ?? exports;
+  }
+
+  /**
+   * Gains project entry for the given export path.
+   *
+   * @param path - Target export path.
+   *
+   * @returns Corresponding project entry, or new one if not exists yet.
+   */
+  async entryFor(path: PackageJson.EntryPath): Promise<ProjectEntry> {
+    const entries = await this.entries;
+
+    return entries.get(path) ?? new ProjectEntry$(this);
+  }
+
+  /**
+   * Assigns project entry for the given export path.
+   *
+   * @param path - Export path of the entry.
+   * @param entry - Project entry to assign.
+   *
+   * @returns Updated instance.
+   */
+  withEntry(path: PackageJson.EntryPath, entry: ProjectEntry): this {
+    const clone = this.clone();
+
+    clone.#customEntries = this.#customEntries ? new Map(this.#customEntries) : new Map();
+    clone.#customEntries.set(path, entry);
+
+    return clone;
   }
 
   /**
    * Promise resolved to {@link ProjectEntry#isGEnerated generated} project entries with their
    * {@link ProjectEntry.name names} as keys.
    */
-  get generatedEntries(): Promise<ReadonlyMap<string, ProjectEntry.Generated>> {
+  get generatedEntries(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectEntry.Generated>> {
     return (this.#generatedEntries ??= this.#detectGeneratedEntries());
   }
 
-  async #detectGeneratedEntries(): Promise<ReadonlyMap<string, ProjectEntry.Generated>> {
+  async #detectGeneratedEntries(): Promise<
+    ReadonlyMap<PackageJson.EntryPath, ProjectEntry.Generated>
+  > {
     const allEntries = await this.entries;
     const entries = await Promise.all(
       [...allEntries].map(
-        async ([name, entry]): Promise<[string, ProjectEntry.Generated] | undefined> => {
+        async ([name, entry]): Promise<
+          [PackageJson.EntryPath, ProjectEntry.Generated] | undefined
+        > => {
           const generated = await entry.toGenerated();
 
           return generated && [name, generated];
@@ -249,11 +305,11 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
   /**
    * Promise resolved to project exports map with their {@link ProjectEntry.name names} as keys.
    */
-  get exports(): Promise<ReadonlyMap<string, ProjectExport>> {
+  get exports(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectExport>> {
     return (this.#exports ??= this.#detectExports());
   }
 
-  async #detectExports(): Promise<ReadonlyMap<string, ProjectExport>> {
+  async #detectExports(): Promise<ReadonlyMap<PackageJson.EntryPath, ProjectExport>> {
     const entryPoints = await this.entryPoints;
 
     return new Map(
