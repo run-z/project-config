@@ -1,8 +1,8 @@
+import ts from '@rollup/plugin-typescript';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
 import { defineConfig } from 'rollup';
 import flatDts from 'rollup-plugin-flat-dts';
-import ts from 'rollup-plugin-typescript2';
 import typescript from 'typescript';
 
 const externalModules = new Set(builtinModules);
@@ -19,11 +19,17 @@ export default defineConfig({
   plugins: [
     ts({
       typescript,
-      cacheRoot: 'target/.rts2_cache',
+      tsconfig: './tsconfig.main.json',
+      cacheDir: 'target/.ts_cache',
     }),
   ],
   external(id) {
-    return id.startsWith('node:') || externalModules.has(id) || id.startsWith('rollup');
+    return (
+      id.startsWith('node:')
+      || externalModules.has(id)
+      || id.startsWith('rollup')
+      || id.startsWith('@rollup/')
+    );
   },
   output: {
     dir: 'dist',
@@ -40,6 +46,7 @@ export default defineConfig({
     },
     plugins: [
       flatDts({
+        tsconfig: './tsconfig.main.json',
         lib: true,
         file: 'project-config.d.ts',
         compilerOptions: {

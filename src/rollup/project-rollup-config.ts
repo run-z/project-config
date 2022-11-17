@@ -1,7 +1,8 @@
 import deepmerge from 'deepmerge';
+import fs from 'node:fs/promises';
 import module from 'node:module';
 import path from 'node:path';
-import { OutputOptions, OutputPlugin, RollupOptions, RollupOutput } from 'rollup';
+import type { OutputOptions, OutputPlugin, Plugin, RollupOptions, RollupOutput } from 'rollup';
 import { ProjectEntry } from '../package/project-entry.js';
 import { ProjectPackage } from '../package/project-package.js';
 import { type ProjectConfig } from '../project-config.js';
@@ -252,11 +253,8 @@ export class ProjectRollupConfig extends ProjectDevTool {
   async #autogenerateOptions(): Promise<RollupOptions> {
     const { sourceDir } = this.project;
     const pkg = ProjectPackage.of(this.project);
-    const output = await this.project.output;
-    const { cacheDir } = output;
     const entries = await pkg.generatedEntries;
-    const tsConfig = ProjectTypescriptConfig.of(this.project);
-    const { default: tsPlugin } = await import('rollup-plugin-typescript2');
+    const tsConfigFile = await this.#createTsConfigFile();
 
     return {
       input: Object.fromEntries(
@@ -269,17 +267,9 @@ export class ProjectRollupConfig extends ProjectDevTool {
           ),
         ),
       ),
-      plugins: [
-        ProjectRollupPlugin$create(this),
-        tsPlugin({
-          typescript: await tsConfig.typescript,
-          tsconfig: tsConfig.tsconfig ?? undefined,
-          tsconfigOverride: await tsConfig.options,
-          cacheRoot: path.join(cacheDir, 'rts2'),
-        }),
-      ],
+      plugins: [ProjectRollupPlugin$create(this), ...(await this.#createTsPlugin(tsConfigFile))],
       external: await this.#createExternal(),
-      output: await this.#createOutputs(),
+      output: await this.#createOutputs(tsConfigFile),
     };
   }
 
@@ -323,7 +313,55 @@ export class ProjectRollupConfig extends ProjectDevTool {
     };
   }
 
-  async #createOutputs(): Promise<OutputOptions | OutputOptions[]> {
+  async #createTsConfigFile(): Promise<string> {
+    const { rootDir, sourceDir } = this.project;
+    const { distDir, cacheDir } = await this.project.output;
+    const pkg = ProjectPackage.of(this.project);
+    const tsConfig = ProjectTypescriptConfig.of(this.project);
+
+    await fs.mkdir(cacheDir, { recursive: true });
+
+    const file = path.resolve(cacheDir, 'tsconfig.json');
+    const entries = await pkg.generatedEntries;
+
+    await fs.writeFile(
+      file,
+      JSON.stringify(
+        {
+          extends: tsConfig.tsconfig ? path.resolve(rootDir, tsConfig.tsconfig) : undefined,
+          compilerOptions: {
+            ...(await tsConfig.options),
+            rootDir: sourceDir,
+            outDir: distDir,
+          },
+          files: await Promise.all(
+            [...entries.values()].map(async entry => path.resolve(sourceDir, await entry.sourceFile)),
+          ),
+          include: [],
+        },
+        null,
+        2,
+      ),
+    );
+
+    return file;
+  }
+
+  async #createTsPlugin(tsConfigFile: string): Promise<Plugin[]> {
+    const { default: tsPlugin } = await import('@rollup/plugin-typescript');
+    const { cacheDir } = await this.project.output;
+    const tsConfig = ProjectTypescriptConfig.of(this.project);
+
+    return [
+      tsPlugin({
+        typescript: await tsConfig.typescript,
+        tsconfig: tsConfigFile,
+        cacheDir: path.join(cacheDir, 'rts'),
+      }),
+    ];
+  }
+
+  async #createOutputs(tsConfigFile: string): Promise<OutputOptions | OutputOptions[]> {
     const pkg = ProjectPackage.of(this.project);
     const entries = await pkg.generatedEntries;
     let hasESM = false;
@@ -341,16 +379,19 @@ export class ProjectRollupConfig extends ProjectDevTool {
     }
 
     if (hasESM && hasCommonJS) {
-      return await Promise.all([this.#createOutput('esm', true), this.#createOutput('commonjs')]);
+      return await Promise.all([
+        this.#createOutput('esm', tsConfigFile),
+        this.#createOutput('commonjs'),
+      ]);
     }
     if (hasCommonJS) {
-      return await this.#createOutput('commonjs', true);
+      return await this.#createOutput('commonjs', tsConfigFile);
     }
 
-    return await this.#createOutput('esm', true);
+    return await this.#createOutput('esm', tsConfigFile);
   }
 
-  async #createOutput(format: 'esm' | 'commonjs', withDts?: boolean): Promise<OutputOptions> {
+  async #createOutput(format: 'esm' | 'commonjs', dtsConfigFile?: string): Promise<OutputOptions> {
     const distFileOf = format === 'esm' ? ProjectEntry$esmDist : ProjectEntry$commonJSDist;
     const { sourceDir } = this.project;
     const pkg = ProjectPackage.of(this.project);
@@ -397,11 +438,11 @@ export class ProjectRollupConfig extends ProjectDevTool {
 
         return null;
       },
-      plugins: withDts ? await this.#flatDts() : [],
+      plugins: dtsConfigFile ? await this.#flatDts(dtsConfigFile) : [],
     };
   }
 
-  async #flatDts(): Promise<OutputPlugin[]> {
+  async #flatDts(dtsConfigFile: string): Promise<OutputPlugin[]> {
     const pkg = ProjectPackage.of(this.project);
     const mainEntry = await pkg.mainEntry;
     const generatedMainEntry = await mainEntry.toGenerated();
@@ -416,7 +457,7 @@ export class ProjectRollupConfig extends ProjectDevTool {
 
     return [
       flatDts({
-        tsconfig: tsConfig.tsconfig || undefined,
+        tsconfig: dtsConfigFile,
         compilerOptions: {
           ...(await tsConfig.tscOptions),
           declarationMap: true,

@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist"
+  },
+  "files": ["./src/mod.ts", "./src/rollup.config.js/main.ts"],
+  "include": []
+}

@@ -63,9 +63,9 @@
     }
   },
   "dependencies": {
+    "@rollup/plugin-typescript": "^9.0.2",
     "deepmerge": "^4.2.2",
-    "rollup-plugin-flat-dts": "^2.0.0",
-    "rollup-plugin-typescript2": "^0.34.1"
+    "rollup-plugin-flat-dts": "^2.0.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.3.1",
