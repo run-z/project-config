@@ -1,11 +1,12 @@
 import deepmerge from 'deepmerge';
 import module from 'node:module';
 import path from 'node:path';
-import type { OutputOptions, OutputPlugin, RollupOptions, RollupOutput } from 'rollup';
+import { OutputOptions, OutputPlugin, RollupOptions, RollupOutput } from 'rollup';
 import { ProjectEntry } from '../package/project-entry.js';
 import { ProjectPackage } from '../package/project-package.js';
 import { type ProjectConfig } from '../project-config.js';
 import { ProjectDevTool } from '../project-dev-tool.js';
+import { ProjectError } from '../project.error.js';
 import { ProjectTypescriptConfig } from '../typescript/project-typescript-config.js';
 import {
   ProjectRollupPlugin$create,
@@ -178,24 +179,55 @@ export class ProjectRollupConfig extends ProjectDevTool {
    */
   async run(): Promise<RollupOutput[]> {
     const { rollup } = await this.rollup;
-    const result: RollupOutput[] = [];
 
-    for (const options of await this.options) {
-      const { write } = await rollup(options);
-      let { output = [] } = options;
+    try {
+      const result: RollupOutput[] = [];
 
-      if (!Array.isArray(output)) {
-        output = [output];
+      for (const options of await this.options) {
+        const { write } = await rollup(options);
+        let { output = [] } = options;
+
+        if (!Array.isArray(output)) {
+          output = [output];
+        }
+
+        await Promise.all(
+          output.map(async output => {
+            result.push(await write(output));
+          }),
+        );
       }
 
-      await Promise.all(
-        output.map(async output => {
-          result.push(await write(output));
-        }),
-      );
+      return result;
+    } catch (error) {
+      this.#handleError(error);
+    }
+  }
+
+  #handleError(error: unknown): never {
+    if (!isRollupError(error)) {
+      throw error;
     }
 
-    return result;
+    const name = error.name || error.cause?.name;
+    const nameSection = name ? `${name}: ` : '';
+    const pluginSection = error.plugin ? `(plugin ${error.plugin}) ` : '';
+    let message = `${pluginSection}${nameSection}${error.message}`;
+
+    message += error.loc
+      ? `${error.loc.file || error.id} (${error.loc.line}:${error.loc.column})`
+      : error.id;
+
+    if (error.frame) {
+      message += `\n${error.frame}`;
+    }
+    if (error.stack) {
+      message += `\n${error.stack}`;
+    }
+
+    console.error(error.id, error.loc, error.frame);
+
+    throw new ProjectError(message);
   }
 
   /**
@@ -241,6 +273,7 @@ export class ProjectRollupConfig extends ProjectDevTool {
         ProjectRollupPlugin$create(this),
         tsPlugin({
           typescript: await tsConfig.typescript,
+          tsconfig: tsConfig.tsconfig ?? undefined,
           tsconfigOverride: await tsConfig.options,
           cacheRoot: path.join(cacheDir, 'rts2'),
         }),
@@ -471,4 +504,26 @@ function ProjectEntry$commonJSDist({ esm, commonJS }: ProjectEntry.DistFiles): s
   const extIdx = esm!.lastIndexOf('.');
 
   return extIdx > 0 ? `${esm!.slice(0, extIdx)}.cjs` : `${esm}.cjs`;
+}
+
+interface RollupError extends Error {
+  readonly id?: string;
+  readonly cause?: Error;
+  readonly plugin?: string;
+  readonly loc?: {
+    readonly file?: string;
+    readonly line: number;
+    readonly column: number;
+  };
+  readonly frame?: string;
+}
+
+function isRollupError(error: unknown): error is RollupError {
+  if (!(error && typeof error === 'object')) {
+    return false;
+  }
+
+  const rollupError = error as RollupError;
+
+  return !rollupError.plugin || !!rollupError.id || !!rollupError.loc || !!rollupError.frame;
 }
