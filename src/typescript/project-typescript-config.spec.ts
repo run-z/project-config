@@ -8,7 +8,7 @@ describe('ProjectTypescriptConfig', () => {
       await expect(new ProjectTypescriptConfig(new ProjectConfig()).options).resolves.toMatchObject(
         {
           moduleResolution: 'Node',
-          module: 'ES2020',
+          module: 'Node16',
           target: 'ES2022',
           strict: true,
         },
