@@ -1,22 +1,9 @@
 {
+  "extends": "./tsconfig.lib.json",
   "compilerOptions": {
-    "moduleResolution": "Node",
-    "module": "Node16",
-    "target": "ES2022",
-    "strict": true,
-    "allowSyntheticDefaultImports": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "forceConsistentCasingInFileNames": true,
-    "importHelpers": true,
-    "noEmitHelpers": true,
-    "lib": ["ES2022"],
+    "moduleResolution": "Node", // @rollup/plugin-typescript does not conform to Node16 resolution.
     "types": ["node"],
-    "outDir": "target/js",
-    "sourceMap": true,
-    "newLine": "LF"
+    "outDir": "target/js"
   },
   "include": ["src/**/*"]
 }

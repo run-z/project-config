@@ -1,8 +1,12 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { type RawCompilerOptions } from 'ts-jest';
 import type ts from 'typescript';
+import { ProjectPackage } from '../package/project-package.js';
 import { ProjectConfig } from '../project-config.js';
 import { ProjectDevTool } from '../project-dev-tool.js';
+import { ProjectError } from '../project.error.js';
 
 function ProjectTypescriptConfig$create(project: ProjectConfig): ProjectTypescriptConfig {
   const { typescript } = project.tools;
@@ -38,8 +42,8 @@ export class ProjectTypescriptConfig extends ProjectDevTool {
   #typescript?: Promise<typeof ts>;
   #tsconfig: string | null = 'tsconfig.json';
   #customOptions: () => RawCompilerOptions;
-  #options?: Promise<RawCompilerOptions>;
-  #tscOptions?: Promise<ts.CompilerOptions>;
+
+  #generatedTsconfig?: Promise<TsConfigFile>;
 
   /**
    * Constructs TypeScript configuration.
@@ -78,62 +82,91 @@ export class ProjectTypescriptConfig extends ProjectDevTool {
   }
 
   /**
-   * TypeScript compiler options.
+   * Generated `tsconfig.json` file with custom options applied.
    */
-  get options(): Promise<RawCompilerOptions> {
-    return (this.#options ??= this.#toOptions());
+  get generatedTsconfig(): Promise<TsConfigFile> {
+    return (this.#generatedTsconfig ??= this.#generateTsconfig());
   }
 
-  async #toOptions(): Promise<RawCompilerOptions> {
-    const customOptions = this.#customOptions();
+  async #generateTsconfig(): Promise<TsConfigFile> {
+    const { sourceDir } = this.project;
+    const pkg = ProjectPackage.of(this.project);
+    const entries = await pkg.generatedEntries;
 
-    if (this.tsconfig == null) {
-      return customOptions;
-    }
-
-    const ts = await this.typescript;
-    const tsconfig = path.resolve(this.project.rootDir, this.tsconfig);
-    const { config = {}, error } = ts.readConfigFile(tsconfig, ts.sys.readFile) as {
-      config?: { compilerOptions?: RawCompilerOptions };
-      error?: ts.Diagnostic;
-    };
-
-    if (error) {
-      console.error(ts.formatDiagnosticsWithColorAndContext([error], this.#errorFormatHost(ts)));
-
-      throw new Error(`Can not parse TypeScript configuration: ${this.#tsconfig}`);
-    }
-
-    return {
-      ...config.compilerOptions,
-      ...customOptions,
-    };
+    return await this.writeTsconfig('tsconfig.json', {
+      files: await Promise.all(
+        [...entries.values()].map(async entry => path.resolve(sourceDir, await entry.sourceFile)),
+      ),
+      include: [],
+    });
   }
 
   /**
-   * TypeScript compiler options suitable for passing to TypeScript compiler API.
+   * Creates custom `tsconfig.json` file, but does not write it to file system.
+   *
+   * The configuration file extends {@link #tsconfig project's `tsconfig.json`} by default and applies custom options.
+   *
+   * @param name - File name relative to {@link ProjectOutput#cacheDir cache directory}.
+   * @param contents - Custom file contents.
+   *
+   * @returns Created file representation.
    */
-  get tscOptions(): Promise<ts.CompilerOptions> {
-    return (this.#tscOptions ??= this.#toTscOptions());
-  }
+  async createTsconfig(name: string, contents: TsConfigJson): Promise<TsConfigFile> {
+    const { rootDir, sourceDir } = this.project;
+    const { distDir, cacheDir } = await this.project.output;
+    const file = path.resolve(cacheDir, name);
+    const customOptions = this.tsconfig != null ? this.#customOptions() : undefined;
 
-  async #toTscOptions(): Promise<ts.CompilerOptions> {
+    const json = {
+      ...contents,
+      extends:
+        contents.extends ?? (this.tsconfig ? path.resolve(rootDir, this.tsconfig) : undefined),
+      compilerOptions: {
+        ...customOptions,
+        ...contents.compilerOptions,
+        rootDir: sourceDir,
+        outDir: distDir,
+      },
+    };
+
+    const basePath = path.dirname(file);
     const ts = await this.typescript;
-    const { options, errors } = ts.convertCompilerOptionsFromJson(
-      this.options,
-      this.project.rootDir,
-      'tsconfig.custom.json',
-    );
+    const {
+      options,
+      errors,
+      fileNames: files,
+    } = ts.parseJsonConfigFileContent(json, ts.sys, basePath, undefined, file);
 
     if (errors.length) {
-      console.error(ts.formatDiagnosticsWithColorAndContext(errors, this.#errorFormatHost(ts)));
-
-      throw new Error(
-        `Can not parse TypeScript compiler options: ${this.tsconfig || 'tsconfig.custom.json'}`,
+      throw new ProjectError(
+        `Can not write TypeScript configuration (${file}):\n`
+          + ts.formatDiagnosticsWithColorAndContext(errors, this.#errorFormatHost(ts)),
       );
     }
 
-    return options;
+    return { file, json, options, files };
+  }
+
+  /**
+   * Writes {@link createTsconfig custom} `tsconfig.json` file to specified location.
+   *
+   * The configuration file extends {@link #tsconfig project's `tsconfig.json`} by default and applies custom options.
+   *
+   * @param name - File name relative to {@link ProjectOutput#cacheDir cache directory}.
+   * @param contents - Custom file contents.
+   *
+   * @returns Written file representation.
+   */
+  async writeTsconfig(name: string, contents: TsConfigJson): Promise<TsConfigFile> {
+    const tsconfig = await this.createTsconfig(name, contents);
+
+    const { file, json } = tsconfig;
+    const basePath = path.dirname(file);
+
+    await fs.mkdir(basePath, { recursive: true });
+    await fs.writeFile(file, JSON.stringify(json, null, 2) + os.EOL);
+
+    return tsconfig;
   }
 
   #errorFormatHost(typescript: typeof ts): ts.FormatDiagnosticsHost {
@@ -223,4 +256,40 @@ export class ProjectTypescriptConfig extends ProjectDevTool {
     return clone;
   }
 
+}
+
+/**
+ * Contents of `tsconfig.json` file.
+ */
+export interface TsConfigJson {
+  readonly compilerOptions?: RawCompilerOptions | undefined;
+  readonly exclude?: readonly string[] | undefined;
+  readonly extends?: string | undefined;
+  readonly files?: readonly string[] | undefined;
+  readonly include?: readonly string[] | undefined;
+}
+
+/**
+ * Representation to `tsconfig.json` file.
+ */
+export interface TsConfigFile {
+  /**
+   * Absolute path to the file.
+   */
+  readonly file: string;
+
+  /**
+   * File contents.
+   */
+  readonly json: TsConfigJson;
+
+  /**
+   * TypeScript compiler options extracted from file contents.
+   */
+  readonly options: ts.CompilerOptions;
+
+  /**
+   * Array of transpiled files.
+   */
+  readonly files: readonly string[];
 }

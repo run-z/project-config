@@ -23,7 +23,8 @@
     "./rollup.config.js": {
       "types": "./dist/rollup.config.d.ts",
       "default": "./dist/rollup.config.js"
-    }
+    },
+    "./tsconfig.lib.json": "./exports/tsconfig.lib.json"
   },
   "bin": {
     "build-z": "bin/build-z.js",
