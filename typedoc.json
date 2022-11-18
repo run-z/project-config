@@ -1,7 +1,9 @@
 {
-  "entryPoints": ["src/mod.ts", "src/jest/mod.ts", "src/rollup/mod.ts"],
+  "entryPoints": ["src/mod.ts"],
   "excludePrivate": true,
-  "name": "Project Configuration Helper",
+  "name": "Project Config",
   "out": "./target/typedoc",
-  "tsconfig": "tsconfig.json"
+  "compilerOptions": {
+    "module": 7 /* ES2022 */
+  }
 }
