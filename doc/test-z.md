@@ -46,8 +46,10 @@ To customize, add Jest options to `project.config.js` file:
 
 ```javascript
 export default {
-  jest: {
-    // ...Options to apply on top of automatically generated ones.
+  tools: {
+    jest: {
+      // ...Options to apply on top of automatically generated ones.
+    },
   },
 };
 ```

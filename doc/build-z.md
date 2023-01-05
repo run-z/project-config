@@ -68,8 +68,10 @@ To customize, add Rollup options to `project.config.js` file:
 
 ```javascript
 export default {
-  rollup: {
-    // ...Options to apply on top of automatically generated ones.
+  tools: {
+    rollup: {
+      // ...Options to apply on top of automatically generated ones.
+    },
   },
 };
 ```
