@@ -430,7 +430,10 @@ export class ProjectRollupConfig extends ProjectDevTool {
           await Promise.all(
             [...entries]
               .filter(item => item[1] !== generatedMainEntry)
-              .map(async ([name, entry]) => [name, { file: await entry.typesFile }]),
+              .map(async ([name, entry]) => [
+                name.slice(2) /* remove `./` prefix */,
+                { file: await entry.typesFile },
+              ]),
           ),
         ),
         internal: ['**/impl/**', '**/*.impl'],
