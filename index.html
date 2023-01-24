@@ -39,7 +39,7 @@
   <h2>Installation</h2>
 </a>
 <p>Add <code>@run-z/project-config</code> to your project:</p>
-<pre><code class="language-shell"><span class="hl-0">npm add --save-dev @run-z/project-config</span>
+<pre><code class="language-shell"><span class="hl-0">npm </span><span class="hl-1">add</span><span class="hl-0"> </span><span class="hl-1">--save-dev</span><span class="hl-0"> </span><span class="hl-1">@run-z/project-config</span>
 </code></pre>
 <p>and start using its tooling.</p>
 
@@ -59,10 +59,10 @@
   <h2>Build Tools</h2>
 </a>
 <p>Build tools are scripts that can be added to project&#39;s <code>package.json</code>:</p>
-<pre><code class="language-json"><span class="hl-0">{</span><br/><span class="hl-0">  </span><span class="hl-1">&quot;scripts&quot;</span><span class="hl-0">: {</span><br/><span class="hl-0">    </span><span class="hl-1">&quot;build&quot;</span><span class="hl-0">: </span><span class="hl-2">&quot;build-z&quot;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-1">&quot;clean&quot;</span><span class="hl-0">: </span><span class="hl-2">&quot;clean-z&quot;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-1">&quot;lint&quot;</span><span class="hl-0">: </span><span class="hl-2">&quot;lint-z&quot;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-1">&quot;test&quot;</span><span class="hl-0">: </span><span class="hl-2">&quot;test-z&quot;</span><br/><span class="hl-0">  }</span><br/><span class="hl-0">}</span>
+<pre><code class="language-json"><span class="hl-0">{</span><br/><span class="hl-0">  </span><span class="hl-2">&quot;scripts&quot;</span><span class="hl-0">: {</span><br/><span class="hl-0">    </span><span class="hl-2">&quot;build&quot;</span><span class="hl-0">: </span><span class="hl-1">&quot;build-z&quot;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">&quot;clean&quot;</span><span class="hl-0">: </span><span class="hl-1">&quot;clean-z&quot;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">&quot;lint&quot;</span><span class="hl-0">: </span><span class="hl-1">&quot;lint-z&quot;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">&quot;test&quot;</span><span class="hl-0">: </span><span class="hl-1">&quot;test-z&quot;</span><br/><span class="hl-0">  }</span><br/><span class="hl-0">}</span>
 </code></pre>
 <p>Then these tools cab be invoked to perform particular tasks:</p>
-<pre><code class="language-shell"><span class="hl-0">npm run clean  </span><span class="hl-3"># Clean output</span><br/><span class="hl-0">npm run lint   </span><span class="hl-3"># Perform linting</span><br/><span class="hl-0">npm run </span><span class="hl-4">test</span><span class="hl-0">   </span><span class="hl-3"># Run project tests</span><br/><span class="hl-0">npm run build  </span><span class="hl-3"># Bundle project files</span>
+<pre><code class="language-shell"><span class="hl-0">npm </span><span class="hl-1">run</span><span class="hl-0"> </span><span class="hl-1">clean</span><span class="hl-0">  </span><span class="hl-3"># Clean output</span><br/><span class="hl-0">npm </span><span class="hl-1">run</span><span class="hl-0"> </span><span class="hl-1">lint</span><span class="hl-0">   </span><span class="hl-3"># Perform linting</span><br/><span class="hl-0">npm </span><span class="hl-1">run</span><span class="hl-0"> </span><span class="hl-1">test</span><span class="hl-0">   </span><span class="hl-3"># Run project tests</span><br/><span class="hl-0">npm </span><span class="hl-1">run</span><span class="hl-0"> </span><span class="hl-1">build</span><span class="hl-0">  </span><span class="hl-3"># Bundle project files</span>
 </code></pre>
 <p>The following tools supported:</p>
 <ul>
