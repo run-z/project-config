@@ -1,5 +1,4 @@
 import deepmerge from 'deepmerge';
-import module from 'node:module';
 import path from 'node:path';
 import type { OutputOptions, OutputPlugin, Plugin, RollupOptions, RollupOutput } from 'rollup';
 import { ProjectEntry } from '../package/project-entry.js';
@@ -265,49 +264,12 @@ export class ProjectRollupConfig extends ProjectDevTool {
           ),
         ),
       ),
-      plugins: [ProjectRollupPlugin$create(this), ...(await this.#createTsPlugin())],
-      external: await this.#createExternal(),
+      plugins: [
+        ProjectRollupPlugin$create(this),
+        ...(await this.#createTsPlugin()),
+        ...(await this.#createUnbundlePlugin()),
+      ],
       output: await this.#createOutputs(),
-    };
-  }
-
-  async #createExternal(): Promise<(this: void, id: string) => boolean> {
-    const pkg = ProjectPackage.of(this.project);
-    const {
-      dependencies = {},
-      devDependencies = {},
-      peerDependencies = {},
-      optionalDependencies = {},
-    } = await pkg.packageJson;
-
-    const externals = new Set([
-      ...module.builtinModules,
-      ...Object.keys(dependencies),
-      ...Object.keys(devDependencies),
-      ...Object.keys(peerDependencies),
-      ...Object.keys(optionalDependencies),
-    ]);
-
-    return id => {
-      if (id.startsWith('node:')) {
-        // Built-in Node.js module.
-        return true;
-      }
-
-      let slashIdx = id.indexOf('/');
-
-      if (slashIdx > 0) {
-        if (id.startsWith('@')) {
-          // Scoped package.
-          // Module name includes one slash.
-          slashIdx = id.indexOf('/', slashIdx + 1);
-        }
-        if (slashIdx > 0) {
-          id = id.slice(0, slashIdx);
-        }
-      }
-
-      return externals.has(id);
     };
   }
 
@@ -324,6 +286,12 @@ export class ProjectRollupConfig extends ProjectDevTool {
         cacheDir: path.join(cacheDir, 'rts'),
       }),
     ];
+  }
+
+  async #createUnbundlePlugin(): Promise<Plugin[]> {
+    const { default: unbundle } = await import('rollup-plugin-unbundle');
+
+    return [unbundle()];
   }
 
   async #createOutputs(): Promise<OutputOptions | OutputOptions[]> {
