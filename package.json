@@ -15,6 +15,13 @@
   "type": "module",
   "module": "./dist/project-config.js",
   "types": "./dist/project-config.d.ts",
+  "typesVersions": {
+    "*": {
+      "rollup.config.js": [
+        "./dist/rollup.config.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/project-config.d.ts",

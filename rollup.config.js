@@ -52,6 +52,11 @@ export default defineConfig({
         compilerOptions: {
           declarationMap: true,
         },
+        entries: {
+          'rollup.config.js': {
+            file: './rollup.config.d.ts',
+          },
+        },
         internal: ['**/impl/**', '**/*.impl'],
       }),
     ],
