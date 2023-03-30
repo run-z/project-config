@@ -116,6 +116,16 @@ export class ProjectExport extends ProjectEntry {
       : undefined;
   }
 
+  protected override async detectSourceFile(): Promise<string | null> {
+    const source = this.findConditional('source');
+
+    if (!source) {
+      return super.detectSourceFile();
+    }
+
+    return path.relative(this.project.sourceDir, source);
+  }
+
   protected override async detectTypesFile(): Promise<string | null> {
     const types = this.findConditional('types');
 
