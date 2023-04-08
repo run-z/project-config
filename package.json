@@ -45,7 +45,7 @@
     "jest-junit": "^15.0.0",
     "rollup": "^3.20.2",
     "ts-jest": "^29.1.0",
-    "typescript": "~5.0.3"
+    "typescript": "~5.0.4"
   },
   "peerDependenciesMeta": {
     "@swc/core": {
@@ -86,7 +86,7 @@
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
-    "eslint": "^8.37.0",
+    "eslint": "^8.38.0",
     "gh-pages": "^5.0.0",
     "jest": "^29.5.0",
     "jest-junit": "^15.0.0",
@@ -99,7 +99,7 @@
     "ts-jest": "^29.1.0",
     "tslib": "^2.5.0",
     "typedoc": "^0.23.28",
-    "typescript": "~5.0.3"
+    "typescript": "~5.0.4"
   },
   "scripts": {
     "all": "run-z build,lint,test",
