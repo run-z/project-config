@@ -5,10 +5,10 @@ import { ProjectDevHostType, type ProjectDevHost } from '../project-dev-host.js'
 import { ProjectDevTool } from '../project-dev-tool.js';
 import { type PackageJson } from './package.json';
 import {
-  isPathExport,
-  loadPackageJson,
   PackageJson$EntryPoint,
   PackageJson$ExportItem,
+  isPathExport,
+  loadPackageJson,
 } from './package.json.impl.js';
 import { ProjectEntry$, ProjectEntry$Main } from './project-entry.impl.js';
 import { ProjectEntry } from './project-entry.js';
@@ -265,7 +265,7 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
   async entryFor(path: PackageJson.EntryPath): Promise<ProjectEntry> {
     const entries = await this.entries;
 
-    return entries.get(path) ?? new ProjectEntry$(this);
+    return entries.get(path) ?? new ProjectEntry$(this, path);
   }
 
   /**

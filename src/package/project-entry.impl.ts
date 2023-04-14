@@ -1,4 +1,5 @@
 import { ProjectEntry } from './project-entry.js';
+import { ProjectPackage } from './project-package.js';
 
 export class ProjectEntry$ extends ProjectEntry {
 
@@ -9,6 +10,10 @@ export class ProjectEntry$ extends ProjectEntry {
 }
 
 export class ProjectEntry$Main extends ProjectEntry {
+
+  constructor(host: ProjectPackage) {
+    super(host, '.');
+  }
 
   protected override async detectDistFiles(): Promise<ProjectEntry.DistFiles | null> {
     const { type } = await this.host().packageJson;

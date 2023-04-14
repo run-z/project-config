@@ -21,7 +21,7 @@ export class ProjectExport extends ProjectEntry {
     projectPackage: ProjectPackage,
     entryPoint: PackageJson.EntryPoint = PackageJson$DefaultEntryPoint,
   ) {
-    super(projectPackage);
+    super(projectPackage, entryPoint.path);
 
     this.#entryPoint = entryPoint;
   }
@@ -119,11 +119,11 @@ export class ProjectExport extends ProjectEntry {
   protected override async detectSourceFile(): Promise<string | null> {
     const source = this.findConditional('source');
 
-    if (!source) {
-      return super.detectSourceFile();
+    if (source) {
+      return path.relative(this.project.sourceDir, source);
     }
 
-    return path.relative(this.project.sourceDir, source);
+    return await super.detectSourceFile();
   }
 
   protected override async detectTypesFile(): Promise<string | null> {

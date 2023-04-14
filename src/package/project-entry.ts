@@ -1,4 +1,4 @@
-import { type Stats } from 'node:fs';
+import { Stats } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { type ProjectConfig } from '../project-config.js';
@@ -13,10 +13,23 @@ import { type ProjectPackage } from './project-package.js';
  */
 export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
 
+  readonly #path: string;
   #name?: Promise<string | null>;
   #distFiles?: Promise<ProjectEntry.DistFiles | null>;
   #sourceFile?: Promise<string | null>;
   #typesFile?: Promise<string | null>;
+
+  constructor(host: ProjectPackage, path: string) {
+    super(host);
+    this.#path = path;
+  }
+
+  /**
+   * Export path of this entry.
+   */
+  get path(): string {
+    return this.#path;
+  }
 
   protected override clone(): this {
     const clone = super.clone();
@@ -47,6 +60,13 @@ export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
     const files = await Promise.all([this.distFiles, this.name, this.sourceFile, this.typesFile]);
 
     return files.every(file => !!file);
+  }
+
+  /**
+   * Whether this entry has distribution file.
+   */
+  get hasDistFile(): boolean {
+    return this.#distFile() != null;
   }
 
   /**
@@ -96,14 +116,12 @@ export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
    * or `null` if this entry is not transpiled.
    *
    * By default, searches for `main.(m|c)?ts`, `mod.(m|c)?ts`, or `index.(m|c)?ts` file in sources sub-directory
-   * corresponding to distribution file. Dots in distribution file name correspond to directory separators. The very
-   * first dot-separated part is discarded.
+   * corresponding to {@link path export path} of the entry.
    *
    * For example:
    *
-   * - `./dist/main.js` converted to `./src/mod.ts`,
-   * - `./dist/project.util.js` converted to `./src/util/mod.ts`,
-   * - `./dist/util/mod.js` converted to `./src/util/mod.ts`.
+   * - `.` converted to `./src/mod.ts`,
+   * - `./util` converted to `./src/util/mod.ts`.
    */
   get sourceFile(): Promise<string | null> {
     return (this.#sourceFile ??= this.detectSourceFile());
@@ -126,50 +144,33 @@ export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
   }
 
   protected async detectSourceFile(): Promise<string | null> {
-    let distFile = await this.#distFile();
-
-    if (!distFile) {
+    if (!this.hasDistFile) {
       return null;
     }
 
-    const { distDir } = await this.project.output;
+    const { sourceDir } = this.project;
+    const searchPath = this.path;
 
-    distFile = path.relative(distDir, path.resolve(distDir, distFile));
-
-    const ext = path.extname(distFile);
-    const name = ext ? distFile.slice(0, -ext.length) : ext;
-    let parts = name.split(path.sep);
-    const lastPart = parts[parts.length - 1];
-    const lastParts = lastPart.split('.').slice(1);
-
-    parts = [...parts.slice(0, -1), ...lastParts];
-
-    return await this.#findSourceFile([...parts]);
-  }
-
-  async #findSourceFile(searchPath: readonly string[]): Promise<string | null> {
     for (const fileName of SOURCE_FILE_NAMES) {
       for (const extension of SOURCE_FILE_EXTENSIONS) {
-        let filePath: string[];
+        let filePath: string;
 
         if (fileName) {
-          filePath = [...searchPath, `${fileName}${extension}`];
-        } else if (searchPath.length) {
-          filePath = [...searchPath.slice(0, -1), searchPath[searchPath.length - 1] + extension];
+          filePath = path.join(searchPath, `${fileName}${extension}`);
         } else {
-          continue;
+          filePath = searchPath + extension;
         }
 
         let stat: Stats;
 
         try {
-          stat = await fs.stat(path.join(this.project.sourceDir, ...filePath));
+          stat = await fs.stat(path.join(sourceDir, filePath));
         } catch {
           continue;
         }
 
         if (stat.isFile()) {
-          return path.join(...filePath);
+          return filePath;
         }
       }
     }
