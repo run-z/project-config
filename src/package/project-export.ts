@@ -1,6 +1,5 @@
+import { PackageEntryPoint } from '@run-z/npk';
 import path from 'node:path';
-import { type PackageJson } from './package.json';
-import { PackageJson$DefaultEntryPoint } from './package.json.impl.js';
 import { ProjectEntry } from './project-entry.js';
 import { type ProjectPackage } from './project-package.js';
 
@@ -9,7 +8,7 @@ import { type ProjectPackage } from './project-package.js';
  */
 export class ProjectExport extends ProjectEntry {
 
-  #entryPoint: PackageJson.EntryPoint;
+  #entryPoint: PackageEntryPoint;
 
   /**
    * Constructs project export entry of the `project`.
@@ -17,10 +16,7 @@ export class ProjectExport extends ProjectEntry {
    * @param projectPackage - Project package configuration.
    * @param entryPoint - Package entry point to represent.
    */
-  constructor(
-    projectPackage: ProjectPackage,
-    entryPoint: PackageJson.EntryPoint = PackageJson$DefaultEntryPoint,
-  ) {
+  constructor(projectPackage: ProjectPackage, entryPoint: PackageEntryPoint) {
     super(projectPackage, entryPoint.path);
 
     this.#entryPoint = entryPoint;
@@ -37,7 +33,7 @@ export class ProjectExport extends ProjectEntry {
   /**
    * Package entry point this project export represents.
    */
-  get entryPoint(): PackageJson.EntryPoint {
+  get entryPoint(): PackageEntryPoint {
     return this.#entryPoint;
   }
 

@@ -1,8 +1,8 @@
 import { type Config as JestConfig } from '@jest/types';
+import { type PackageJson } from '@run-z/npk';
 import { type RollupOptions } from 'rollup';
 import { type RawCompilerOptions } from 'ts-jest';
 import { type ProjectJestConfig } from './jest/project-jest-config.js';
-import { type PackageJson } from './package/package.json.js';
 import { type ProjectPackage } from './package/project-package.js';
 import { type ProjectConfig } from './project-config.js';
 import { type ProjectRollupConfig } from './rollup/project-rollup-config.js';
