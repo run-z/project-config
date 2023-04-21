@@ -4,7 +4,9 @@ import { ProjectEntry } from './project-entry.js';
 import { type ProjectPackage } from './project-package.js';
 
 /**
- * Project entry corresponding to {@link PackageJson.EntryPoint package export}.
+ * Project entry corresponding to package [entry point].
+ *
+ * [entry point]: https://nodejs.org/dist/latest-v18.x/docs/api/packages.html#package-entry-points
  */
 export class ProjectExport extends ProjectEntry {
 
