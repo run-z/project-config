@@ -5,11 +5,7 @@ import { defineConfig } from 'rollup';
 import flatDts from 'rollup-plugin-flat-dts';
 import typescript from 'typescript';
 
-const externalModules = new Set(builtinModules);
-
-externalModules.add('deepmerge');
-externalModules.add('jest');
-externalModules.add('typescript');
+const externalModules = new Set([...builtinModules, 'deepmerge', 'jest', 'typescript']);
 
 export default defineConfig({
   input: {
@@ -28,6 +24,7 @@ export default defineConfig({
       id.startsWith('node:')
       || externalModules.has(id)
       || id.startsWith('rollup')
+      || id.startsWith('@run-z/')
       || id.startsWith('@rollup/')
     );
   },
