@@ -51,7 +51,10 @@ describe('ProjectTools', () => {
     const pkg = project.tools.package as ProjectPackage;
 
     expect(pkg).toBeInstanceOf(ProjectPackage);
-    await expect(pkg?.packageJson).resolves.toEqual({ name: 'test' });
+
+    const packageInfo = await pkg.packageInfo;
+
+    expect(packageInfo.packageJson).toEqual({ name: 'test', version: '0.0.0' });
   });
   it('reflects tool construction failure', () => {
     const error = new Error('test');

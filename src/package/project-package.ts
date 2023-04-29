@@ -1,4 +1,4 @@
-import { PackageInfo, PackageJson } from '@run-z/npk';
+import { PackageInfo, PackageJson, PackagePath } from '@run-z/npk';
 import deepMerge from 'deepmerge';
 import path from 'node:path';
 import { isPresent } from '../impl/is-present.js';
@@ -42,12 +42,12 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
 
   #autoloaded = true;
   #customPackageJson: () => PackageJson | PromiseLike<PackageJson>;
-  #customEntries?: Map<PackageJson.ExportPath, ProjectEntry>;
+  #customEntries?: Map<PackagePath, ProjectEntry>;
 
   #packageInfo?: Promise<PackageInfo>;
-  #exports?: Promise<ReadonlyMap<PackageJson.ExportPath, ProjectExport>>;
-  #entries?: Promise<ReadonlyMap<PackageJson.ExportPath, ProjectEntry>>;
-  #generatedEntries?: Promise<ReadonlyMap<PackageJson.ExportPath, ProjectEntry.Generated>>;
+  #exports?: Promise<ReadonlyMap<PackagePath, ProjectExport>>;
+  #entries?: Promise<ReadonlyMap<PackagePath, ProjectEntry>>;
+  #generatedEntries?: Promise<ReadonlyMap<PackagePath, ProjectEntry.Generated>>;
   #mainEntry?: Promise<ProjectEntry>;
 
   /**
@@ -156,13 +156,13 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
   /**
    * Promise resolved to project entries map with their {@link ProjectEntry.name names} as keys.
    */
-  get entries(): Promise<ReadonlyMap<PackageJson.ExportPath, ProjectEntry>> {
+  get entries(): Promise<ReadonlyMap<PackagePath, ProjectEntry>> {
     return (this.#entries ??= this.#buildEntries());
   }
 
-  async #buildEntries(): Promise<ReadonlyMap<PackageJson.ExportPath, ProjectEntry>> {
+  async #buildEntries(): Promise<ReadonlyMap<PackagePath, ProjectEntry>> {
     const exports = await this.exports;
-    let entries: Map<PackageJson.ExportPath, ProjectEntry> | undefined;
+    let entries: Map<PackagePath, ProjectEntry> | undefined;
 
     if (this.#customEntries) {
       entries = new Map(exports);
@@ -185,7 +185,7 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
    *
    * @returns Corresponding project entry, or new one if not exists yet.
    */
-  async entryFor(path: PackageJson.ExportPath): Promise<ProjectEntry> {
+  async entryFor(path: PackagePath): Promise<ProjectEntry> {
     const entries = await this.entries;
 
     return entries.get(path) ?? new ProjectEntry$(this, path);
@@ -199,7 +199,7 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
    *
    * @returns Updated instance.
    */
-  withEntry(path: PackageJson.ExportPath, entry: ProjectEntry): this {
+  withEntry(path: PackagePath, entry: ProjectEntry): this {
     const clone = this.clone();
 
     clone.#customEntries = this.#customEntries ? new Map(this.#customEntries) : new Map();
@@ -212,19 +212,15 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
    * Promise resolved to {@link ProjectEntry#isGenerated generated} project entries with their
    * {@link ProjectEntry.name names} as keys.
    */
-  get generatedEntries(): Promise<ReadonlyMap<PackageJson.ExportPath, ProjectEntry.Generated>> {
+  get generatedEntries(): Promise<ReadonlyMap<PackagePath, ProjectEntry.Generated>> {
     return (this.#generatedEntries ??= this.#detectGeneratedEntries());
   }
 
-  async #detectGeneratedEntries(): Promise<
-    ReadonlyMap<PackageJson.ExportPath, ProjectEntry.Generated>
-  > {
+  async #detectGeneratedEntries(): Promise<ReadonlyMap<PackagePath, ProjectEntry.Generated>> {
     const allEntries = await this.entries;
     const entries = await Promise.all(
       [...allEntries].map(
-        async ([name, entry]): Promise<
-          [PackageJson.ExportPath, ProjectEntry.Generated] | undefined
-        > => {
+        async ([name, entry]): Promise<[PackagePath, ProjectEntry.Generated] | undefined> => {
           const generated = await entry.toGenerated();
 
           return generated && [name, generated];
@@ -238,11 +234,11 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
   /**
    * Promise resolved to project exports map with their {@link ProjectEntry.name names} as keys.
    */
-  get exports(): Promise<ReadonlyMap<PackageJson.ExportPath, ProjectExport>> {
+  get exports(): Promise<ReadonlyMap<PackagePath, ProjectExport>> {
     return (this.#exports ??= this.#detectExports());
   }
 
-  async #detectExports(): Promise<ReadonlyMap<PackageJson.ExportPath, ProjectExport>> {
+  async #detectExports(): Promise<ReadonlyMap<PackagePath, ProjectExport>> {
     const packageInfo = await this.packageInfo;
 
     return new Map(
