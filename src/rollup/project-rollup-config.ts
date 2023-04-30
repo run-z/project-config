@@ -1,5 +1,6 @@
 import deepmerge from 'deepmerge';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import type { OutputOptions, OutputPlugin, Plugin, RollupOptions, RollupOutput } from 'rollup';
 import { ProjectEntry } from '../package/project-entry.js';
 import { ProjectPackage } from '../package/project-package.js';
@@ -396,10 +397,10 @@ export class ProjectRollupConfig extends ProjectDevTool {
         file: await generatedMainEntry.typesFile,
         entries: Object.fromEntries(
           await Promise.all(
-            [...entries]
-              .filter(item => item[1] !== generatedMainEntry)
-              .map(async ([name, entry]) => [
-                name.slice(2) /* remove `./` prefix */,
+            [...entries.values()]
+              .filter(entry => entry !== generatedMainEntry)
+              .map(async entry => [
+                await ProjectEntry$dtsEntry(this.project, entry),
                 { file: await entry.typesFile },
               ]),
           ),
@@ -478,6 +479,25 @@ function ProjectEntry$commonJSDist({ esm, commonJS }: ProjectEntry.DistFiles): s
   const extIdx = esm!.lastIndexOf('.');
 
   return extIdx > 0 ? `${esm!.slice(0, extIdx)}.cjs` : `${esm}.cjs`;
+}
+
+async function ProjectEntry$dtsEntry(
+  project: ProjectConfig,
+  entry: ProjectEntry.Generated,
+): Promise<string> {
+  const { sourceDir } = project;
+  const sourceFile = path.resolve(sourceDir, await entry.sourceFile);
+  const entrySourceDir = path.dirname(sourceFile);
+  const sourceURL = pathToFileURL(sourceDir).href + '/';
+  const entrySourceURL = pathToFileURL(entrySourceDir).href;
+
+  if (!entrySourceURL.startsWith(sourceURL)) {
+    throw new TypeError(
+      `Source file "${sourceFile}" is outside root source directory "${sourceDir}"`,
+    );
+  }
+
+  return entrySourceURL.slice(sourceURL.length);
 }
 
 interface RollupError extends Error {
