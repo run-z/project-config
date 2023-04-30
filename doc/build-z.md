@@ -58,6 +58,28 @@ src/
     mod.ts -- source file for `./rollup` entry.
 ```
 
+Entry point names may have a `.js` extension. The corresponding source directory name may omit `.js` extension in this
+case. So, the above file structure suits the following `package.json` contents too:
+
+```jsonc
+{
+  "exports": {
+    ".": {
+      "types": "./dist/project-config.d.ts",
+      "import": "./dist/project-config.js"
+    },
+    "./jest.js": {
+      "types": "./dist/project-config.jest.d.ts",
+      "import": "./dist/project-config.jest.js"
+    },
+    "./rollup.js": {
+      "types": "./dist/project-config.rollup.d.ts",
+      "import": "./dist/project-config.rollup.js"
+    }
+  }
+}
+```
+
 [entry points]: https://nodejs.org/dist/latest/docs/api/packages.html#package-entry-points
 
 ## Customizing Rollup
