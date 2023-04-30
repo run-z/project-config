@@ -12,7 +12,7 @@
 <div class="col-content">
 <div class="tsd-page-title">
 <h2>Project Config</h2></div>
-<div class="tsd-panel tsd-typography"><a id="md:development-tools-for-typescript-projects" class="tsd-anchor"></a><h1><a href="#$development-tools-for-typescript-projects" style="color:inherit;text-decoration:none">Development Tools for TypeScript Projects</a></h1><p><a href="https://www.npmjs.com/package/@run-z/project-config"><img src="https://img.shields.io/npm/v/@run-z/project-config.svg?logo=npm" alt="NPM"></a>
+<div class="tsd-panel tsd-typography"><a id="md:development-tools-for-typescript-projects" class="tsd-anchor"></a><h1><a href="#md:development-tools-for-typescript-projects">Development Tools for TypeScript Projects</a></h1><p><a href="https://www.npmjs.com/package/@run-z/project-config"><img src="https://img.shields.io/npm/v/@run-z/project-config.svg?logo=npm" alt="NPM"></a>
 <a href="https://github.com/run-z/project-config/actions?query=workflow:Build"><img src="https://github.com/run-z/project-config/workflows/Build/badge.svg" alt="Build Status"></a>
 <a href="https://github.com/run-z/project-config"><img src="https://img.shields.io/static/v1?logo=github&label=GitHub&message=project&color=informational" alt="GitHub Project"></a>
 <a href="https://run-z.github.io/project-config"><img src="https://img.shields.io/static/v1?logo=typescript&label=API&message=docs&color=informational" alt="API Documentation"></a></p>
@@ -30,11 +30,11 @@
 <p>Such as <code>.gitignore</code> and <code>.npmignore</code>.</p>
 </li>
 </ul>
-<a id="md:installation" class="tsd-anchor"></a><h2><a href="#$installation" style="color:inherit;text-decoration:none">Installation</a></h2><p>Add <code>@run-z/project-config</code> to your project:</p>
-<pre><code class="language-shell"><span class="hl-0">npm </span><span class="hl-1">add</span><span class="hl-0"> </span><span class="hl-1">--save-dev</span><span class="hl-0"> </span><span class="hl-1">@run-z/project-config</span>
-</code></pre>
+<a id="md:installation" class="tsd-anchor"></a><h2><a href="#md:installation">Installation</a></h2><p>Add <code>@run-z/project-config</code> to your project:</p>
+<pre><code class="language-shell"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-3">--save-dev</span><span class="hl-1"> </span><span class="hl-2">@run-z/project-config</span>
+</code><button>Copy</button></pre>
 <p>and start using its tooling.</p>
-<a id="md:project-layout" class="tsd-anchor"></a><h2><a href="#$project-layout" style="color:inherit;text-decoration:none">Project Layout</a></h2><p>Project configuration implied to have the following directories:</p>
+<a id="md:project-layout" class="tsd-anchor"></a><h2><a href="#md:project-layout">Project Layout</a></h2><p>Project configuration implied to have the following directories:</p>
 <ul>
 <li><code>src/</code> directory for TypeScript sources.</li>
 <li><code>dist/</code> directory for distribution files.</li>
@@ -42,12 +42,12 @@
 </ul>
 <p>There is also a cache directory created automatically in temporary system directory.</p>
 <p>This can me customized.</p>
-<a id="md:build-tools" class="tsd-anchor"></a><h2><a href="#$build-tools" style="color:inherit;text-decoration:none">Build Tools</a></h2><p>Build tools are scripts that can be added to project&#39;s <code>package.json</code>:</p>
-<pre><code class="language-json"><span class="hl-0">{</span><br/><span class="hl-0">  </span><span class="hl-2">&quot;scripts&quot;</span><span class="hl-0">: {</span><br/><span class="hl-0">    </span><span class="hl-2">&quot;build&quot;</span><span class="hl-0">: </span><span class="hl-1">&quot;build-z&quot;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">&quot;clean&quot;</span><span class="hl-0">: </span><span class="hl-1">&quot;clean-z&quot;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">&quot;lint&quot;</span><span class="hl-0">: </span><span class="hl-1">&quot;lint-z&quot;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">&quot;test&quot;</span><span class="hl-0">: </span><span class="hl-1">&quot;test-z&quot;</span><br/><span class="hl-0">  }</span><br/><span class="hl-0">}</span>
-</code></pre>
+<a id="md:build-tools" class="tsd-anchor"></a><h2><a href="#md:build-tools">Build Tools</a></h2><p>Build tools are scripts that can be added to project&#39;s <code>package.json</code>:</p>
+<pre><code class="language-json"><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-4">&quot;scripts&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-4">&quot;build&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;build-z&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">&quot;clean&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;clean-z&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">&quot;lint&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;lint-z&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">&quot;test&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;test-z&quot;</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button>Copy</button></pre>
 <p>Then these tools cab be invoked to perform particular tasks:</p>
-<pre><code class="language-shell"><span class="hl-0">npm </span><span class="hl-1">run</span><span class="hl-0"> </span><span class="hl-1">clean</span><span class="hl-0">  </span><span class="hl-3"># Clean output</span><br/><span class="hl-0">npm </span><span class="hl-1">run</span><span class="hl-0"> </span><span class="hl-1">lint</span><span class="hl-0">   </span><span class="hl-3"># Perform linting</span><br/><span class="hl-0">npm </span><span class="hl-1">run</span><span class="hl-0"> </span><span class="hl-1">test</span><span class="hl-0">   </span><span class="hl-3"># Run project tests</span><br/><span class="hl-0">npm </span><span class="hl-1">run</span><span class="hl-0"> </span><span class="hl-1">build</span><span class="hl-0">  </span><span class="hl-3"># Bundle project files</span>
-</code></pre>
+<pre><code class="language-shell"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">clean</span><span class="hl-1">  </span><span class="hl-5"># Clean output</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">lint</span><span class="hl-1">   </span><span class="hl-5"># Perform linting</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1">   </span><span class="hl-5"># Run project tests</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build</span><span class="hl-1">  </span><span class="hl-5"># Bundle project files</span>
+</code><button>Copy</button></pre>
 <p>The following tools supported:</p>
 <ul>
 <li><a href="https://github.com/run-z/project-config/tree/master/doc/build-z.md">build-z</a> - transpiles and bundles TypeScript source files with <a href="https://rollupjs.org/">Rollup</a>.</li>
