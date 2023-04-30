@@ -2,9 +2,10 @@ import deepmerge from 'deepmerge';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { OutputOptions, OutputPlugin, Plugin, RollupOptions, RollupOutput } from 'rollup';
-import { ProjectEntry } from '../package/project-entry.js';
+import type { FlatDts } from 'rollup-plugin-flat-dts';
+import type { ProjectEntry } from '../package/project-entry.js';
 import { ProjectPackage } from '../package/project-package.js';
-import { type ProjectConfig } from '../project-config.js';
+import type { ProjectConfig } from '../project-config.js';
 import { ProjectDevTool } from '../project-dev-tool.js';
 import { ProjectError } from '../project.error.js';
 import { ProjectTypescriptConfig } from '../typescript/project-typescript-config.js';
@@ -374,7 +375,10 @@ export class ProjectRollupConfig extends ProjectDevTool {
   }
 
   async #createFlatDtsPlugin(): Promise<OutputPlugin[]> {
-    const pkg = ProjectPackage.of(this.project);
+    const { project } = this;
+    const pkg = ProjectPackage.of(project);
+    const packageInfo = await pkg.packageInfo;
+    const moduleName = packageInfo.name;
     const mainEntry = await pkg.mainEntry;
     const generatedMainEntry = await mainEntry.toGenerated();
 
@@ -382,7 +386,7 @@ export class ProjectRollupConfig extends ProjectDevTool {
       return [];
     }
 
-    const tsConfig = ProjectTypescriptConfig.of(this.project);
+    const tsConfig = ProjectTypescriptConfig.of(project);
     const entries = await pkg.generatedEntries;
     const { default: flatDts } = await import('rollup-plugin-flat-dts');
     const tsconfigRef = await tsConfig.generatedTsconfig;
@@ -395,18 +399,38 @@ export class ProjectRollupConfig extends ProjectDevTool {
         },
         lib: true,
         file: await generatedMainEntry.typesFile,
+        moduleName,
         entries: Object.fromEntries(
           await Promise.all(
             [...entries.values()]
               .filter(entry => entry !== generatedMainEntry)
-              .map(async entry => [
-                await ProjectEntry$dtsEntry(this.project, entry),
-                { file: await entry.typesFile },
-              ]),
+              .map(async entry => await this.#dtsEntry(entry)),
           ),
         ),
         internal: ['**/impl/**', '**/*.impl'],
       }),
+    ];
+  }
+
+  async #dtsEntry(entry: ProjectEntry.Generated): Promise<readonly [string, FlatDts.EntryDecl]> {
+    const { sourceDir } = this.project;
+    const sourceFile = path.resolve(sourceDir, await entry.sourceFile);
+    const entrySourceDir = path.dirname(sourceFile);
+    const sourceURL = pathToFileURL(sourceDir).href + '/';
+    const entrySourceURL = pathToFileURL(entrySourceDir).href;
+
+    if (!entrySourceURL.startsWith(sourceURL)) {
+      throw new TypeError(
+        `Source file "${sourceFile}" is outside root source directory "${sourceDir}"`,
+      );
+    }
+
+    return [
+      entrySourceURL.slice(sourceURL.length),
+      {
+        as: entry.path.slice(2) /* remove `./` prefix */,
+        file: await entry.typesFile,
+      },
     ];
   }
 
@@ -479,25 +503,6 @@ function ProjectEntry$commonJSDist({ esm, commonJS }: ProjectEntry.DistFiles): s
   const extIdx = esm!.lastIndexOf('.');
 
   return extIdx > 0 ? `${esm!.slice(0, extIdx)}.cjs` : `${esm}.cjs`;
-}
-
-async function ProjectEntry$dtsEntry(
-  project: ProjectConfig,
-  entry: ProjectEntry.Generated,
-): Promise<string> {
-  const { sourceDir } = project;
-  const sourceFile = path.resolve(sourceDir, await entry.sourceFile);
-  const entrySourceDir = path.dirname(sourceFile);
-  const sourceURL = pathToFileURL(sourceDir).href + '/';
-  const entrySourceURL = pathToFileURL(entrySourceDir).href;
-
-  if (!entrySourceURL.startsWith(sourceURL)) {
-    throw new TypeError(
-      `Source file "${sourceFile}" is outside root source directory "${sourceDir}"`,
-    );
-  }
-
-  return entrySourceURL.slice(sourceURL.length);
 }
 
 interface RollupError extends Error {

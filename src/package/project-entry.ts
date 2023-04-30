@@ -149,33 +149,53 @@ export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
     }
 
     const { sourceDir } = this.project;
-    const searchPath = this.path;
 
-    for (const fileName of SOURCE_FILE_NAMES) {
-      for (const extension of SOURCE_FILE_EXTENSIONS) {
-        let filePath: string;
+    for (const sourceName of this.#sourceCandidates()) {
+      let stat: Stats;
 
-        if (fileName) {
-          filePath = path.join(searchPath, `${fileName}${extension}`);
-        } else {
-          filePath = searchPath + extension;
-        }
+      try {
+        stat = await fs.stat(path.join(sourceDir, sourceName));
+      } catch {
+        continue;
+      }
 
-        let stat: Stats;
-
-        try {
-          stat = await fs.stat(path.join(sourceDir, filePath));
-        } catch {
-          continue;
-        }
-
-        if (stat.isFile()) {
-          return filePath;
-        }
+      if (stat.isFile()) {
+        return sourceName;
       }
     }
 
     return null;
+  }
+
+  *#sourceCandidates(): IterableIterator<string> {
+    const entryPath = this.path;
+    let searchPath: string;
+    let extPath: string | undefined;
+
+    if (entryPath.endsWith('.js')) {
+      searchPath = entryPath.slice(0, -3);
+      extPath = entryPath;
+    } else {
+      searchPath = entryPath;
+    }
+
+    yield* this.#sourceNames(searchPath);
+    yield* this.#indexNames(searchPath);
+    if (extPath) {
+      yield* this.#indexNames(extPath);
+    }
+  }
+
+  *#indexNames(dir: string): IterableIterator<string> {
+    for (const fileName of INDEX_FILE_NAMES) {
+      yield* this.#sourceNames(path.join(dir, fileName));
+    }
+  }
+
+  *#sourceNames(fileName: string): IterableIterator<string> {
+    for (const extension of SOURCE_FILE_EXTENSIONS) {
+      yield `${fileName}${extension}`;
+    }
   }
 
   /**
@@ -273,7 +293,7 @@ export namespace ProjectEntry {
     readonly commonJS: string;
   }
 
-  export interface Generated {
+  export interface Generated extends ProjectEntry {
     readonly name: Promise<string>;
     readonly sourceFile: Promise<string>;
     readonly distFiles: Promise<DistFiles>;
@@ -281,5 +301,5 @@ export namespace ProjectEntry {
   }
 }
 
-const SOURCE_FILE_NAMES = [null, 'main', 'mod', 'index'];
+const INDEX_FILE_NAMES = ['main', 'mod', 'index'];
 const SOURCE_FILE_EXTENSIONS = ['.ts', '.mts', '.cts'];
