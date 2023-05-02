@@ -1,7 +1,14 @@
 import deepmerge from 'deepmerge';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { OutputOptions, OutputPlugin, Plugin, RollupOptions, RollupOutput } from 'rollup';
+import type {
+  OutputOptions,
+  OutputPlugin,
+  Plugin,
+  PreRenderedChunk,
+  RollupOptions,
+  RollupOutput,
+} from 'rollup';
 import type { FlatDts } from 'rollup-plugin-flat-dts';
 import type { ProjectEntry } from '../package/project-entry.js';
 import { ProjectPackage } from '../package/project-package.js';
@@ -324,55 +331,89 @@ export class ProjectRollupConfig extends ProjectDevTool {
   }
 
   async #createOutput(format: 'esm' | 'commonjs', withDts?: boolean): Promise<OutputOptions> {
-    const distFileOf = format === 'esm' ? ProjectEntry$esmDist : ProjectEntry$commonJSDist;
-    const { sourceDir } = this.project;
+    const distFilePath = await this.#distFilePath(format);
     const pkg = ProjectPackage.of(this.project);
     const output = await this.project.output;
-    const { distDir } = output;
     const entries = await pkg.generatedEntries;
-    const distFiles = new Map<string, string>(
-      await Promise.all(
-        [...entries].map(
-          async ([name, entry]): Promise<[string, string]> => [
-            name,
-            path.relative(distDir, path.resolve(distDir, distFileOf(await entry.distFiles))),
-          ],
-        ),
-      ),
-    );
-    const chunkExt = format === 'esm' ? '.mjs' : '.cjs';
-    const chunksByDir: [string, string][] = await Promise.all(
-      [...entries].map(async ([name, entry]): Promise<[string, string]> => {
-        const sourceFile = await entry.sourceFile;
-        const entryDir = path.dirname(path.resolve(sourceDir, sourceFile));
-
-        return [`${entryDir}/${path.sep}`, `_${name}.${chunkExt}`];
-      }),
-    );
 
     return {
-      dir: distDir,
+      dir: output.distDir,
       format,
       sourcemap: true,
-      entryFileNames: chunk => distFiles.get(chunk.name) || '',
-      manualChunks: (moduleId, moduleApi) => {
-        const moduleInfo = moduleApi.getModuleInfo(moduleId);
-
-        if (!moduleInfo || moduleInfo.isExternal) {
-          return null;
-        }
-
-        for (const [dir, chunk] of chunksByDir) {
-          if (moduleId.startsWith(dir)) {
-            return chunk;
-          }
-        }
-
-        return null;
-      },
+      entryFileNames: await this.#createEntryFileNames(entries, distFilePath),
+      // chunkFileNames: `_[name]`,
+      // manualChunks: await this.#createManualChunks(entries, distFilePath),
       plugins: withDts ? await this.#createFlatDtsPlugin() : [],
     };
   }
+
+  async #distFilePath(
+    format: 'esm' | 'commonjs',
+  ): Promise<(entry: ProjectEntry.Generated) => Promise<string>> {
+    const output = await this.project.output;
+    const { distDir } = output;
+    const distFileOf = format === 'esm' ? ProjectEntry$esmDist : ProjectEntry$commonJSDist;
+
+    return async (entry: ProjectEntry.Generated): Promise<string> => {
+      const distFile = distFileOf(await entry.distFiles);
+
+      path.relative(distDir, path.resolve(distDir, distFileOf(await entry.distFiles)));
+
+      return distFile;
+    };
+  }
+
+  async #createEntryFileNames(
+    entries: ReadonlyMap<string, ProjectEntry.Generated>,
+    distFilePath: (entry: ProjectEntry.Generated) => Promise<string>,
+  ): Promise<(chunkInfo: PreRenderedChunk) => string> {
+    const distFiles = new Map<string, string>(
+      await Promise.all(
+        [...entries].map(
+          async ([name, entry]): Promise<[string, string]> => [name, await distFilePath(entry)],
+        ),
+      ),
+    );
+
+    return chunk => distFiles.get(chunk.name) || '';
+  }
+
+  // async #createManualChunks(
+  //   entries: ReadonlyMap<string, ProjectEntry.Generated>,
+  //   distFilePath: (entry: ProjectEntry.Generated) => Promise<string>,
+  // ): Promise<ManualChunksOption> {
+  //   const { sourceDir } = this.project;
+  //   const chunksByDir: [string, string][] = await Promise.all(
+  //     [...entries.values()].map(async (entry): Promise<[string, string]> => {
+  //       const sourceFile = await entry.sourceFile;
+  //       const distFile = await distFilePath(entry);
+  //       const entryDir = path.dirname(path.resolve(sourceDir, sourceFile));
+
+  //       return [`${entryDir}${path.sep}`, distFile];
+  //     }),
+  //   );
+
+  //   return (moduleId, moduleApi) => {
+  //     const moduleInfo = moduleApi.getModuleInfo(moduleId);
+
+  //     if (!moduleInfo || moduleInfo.isExternal) {
+  //       return null;
+  //     }
+
+  //     let result: string | null = null;
+
+  //     for (const [dir, chunk] of chunksByDir) {
+  //       if (moduleId.startsWith(dir)) {
+  //         if (!result || chunk.length > result.length) {
+  //           // Select the longest match.
+  //           result = chunk;
+  //         }
+  //       }
+  //     }
+
+  //     return result;
+  //   };
+  // }
 
   async #createFlatDtsPlugin(): Promise<OutputPlugin[]> {
     const { project } = this;
