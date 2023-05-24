@@ -33,6 +33,7 @@
     },
     "./tsconfig.lib.json": "./tsconfig.lib.json"
   },
+  "sideEffects": false,
   "bin": {
     "build-z": "bin/build-z.js",
     "clean-z": "bin/clean-z.js",
