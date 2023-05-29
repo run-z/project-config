@@ -73,7 +73,7 @@
   },
   "dependencies": {
     "@rollup/plugin-typescript": "^11.1.1",
-    "@run-z/npk": "^0.3.0",
+    "@run-z/npk": "^0.4.0",
     "deepmerge": "^4.3.1",
     "rollup-plugin-flat-dts": "^2.1.0",
     "rollup-plugin-unbundle": "^3.0.0-dev.1"
