@@ -273,12 +273,13 @@ export class ProjectJestConfig extends ProjectDevTool {
         const tsconfigFile = await tsConfig.writeTsconfig('tsconfig.jest.json', {
           compilerOptions: {
             esModuleInterop: true,
+            importHelpers: false,
+            noEmitHelpers: false,
             noUnusedLocals: false,
             noUnusedParameters: false,
           },
         });
 
-        config.preset = useESM ? 'ts-jest/presets/default-esm' : 'ts-jest';
         config.transform['^.+\\.tsx?$'] = [
           'ts-jest',
           {
