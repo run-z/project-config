@@ -273,8 +273,6 @@ export class ProjectJestConfig extends ProjectDevTool {
         const tsconfigFile = await tsConfig.writeTsconfig('tsconfig.jest.json', {
           compilerOptions: {
             esModuleInterop: true,
-            importHelpers: false,
-            noEmitHelpers: false,
             noUnusedLocals: false,
             noUnusedParameters: false,
           },
