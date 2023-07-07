@@ -38,8 +38,9 @@ export default defineConfig({
       if (id.startsWith(path.resolve('src', 'rollup.config.js'))) {
         return 'rollup.config.js';
       }
-
-      return 'project-config';
+      if (id.startsWith(path.resolve('src'))) {
+        return 'project-config';
+      }
     },
     plugins: [
       flatDts({
