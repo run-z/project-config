@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.lib.json",
   "compilerOptions": {
+    "module": "ES2022",
     "moduleResolution": "Node", // @rollup/plugin-typescript does not conform to Node16 resolution.
     "types": ["node"],
     "outDir": "target/js"

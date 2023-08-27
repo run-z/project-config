@@ -10,8 +10,8 @@ describe('ProjectTypescriptConfig', () => {
       const tsconfigFile = await tsConfig.createTsconfig('tsconfig.test.json', {});
 
       expect(tsconfigFile.options).toMatchObject({
-        moduleResolution: ts.ModuleResolutionKind.NodeJs,
-        module: ts.ModuleKind.Node16,
+        moduleResolution: ts.ModuleResolutionKind.Node10,
+        module: ts.ModuleKind.ES2022,
         target: ts.ScriptTarget.ES2022,
         strict: true,
       });
