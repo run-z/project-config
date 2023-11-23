@@ -33,7 +33,7 @@ class GitIgnoreSection$ extends GitIgnoreSection {
  */
 export class GitIgnoreSectionCtl {
 
-  #entries = new Map<string, [GitIgnoreEntry, GitIgnoreEntryCtl]>();
+  readonly #entries = new Map<string, [GitIgnoreEntry, GitIgnoreEntryCtl]>();
   readonly #fileCtl: GitIgnoreFileCtl;
   readonly #section: GitIgnoreSection$;
   #detached?: Map<string, [GitIgnoreEntry, GitIgnoreEntryCtl]>;
