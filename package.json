@@ -81,7 +81,7 @@
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@jest/types": "^29.6.3",
-    "@run-z/eslint-config": "^4.0.0",
+    "@run-z/eslint-config": "^4.2.0",
     "@run-z/prettier-config": "^2.0.0",
     "@swc/core": "^1.6.5",
     "@swc/jest": "^0.2.36",
