@@ -75,7 +75,7 @@
     "@rollup/plugin-typescript": "^12.1.0",
     "@run-z/npk": "^0.6.0",
     "deepmerge": "^4.3.1",
-    "rollup-plugin-flat-dts": "^2.7.0",
+    "rollup-plugin-flat-dts": "^2.8.0",
     "rollup-plugin-unbundle": "^3.2.0"
   },
   "devDependencies": {
@@ -101,7 +101,7 @@
     "ts-jest": "^29.2.5",
     "tslib": "^2.7.0",
     "typedoc": "^0.26.8",
-    "typescript": "~5.5.4"
+    "typescript": "~5.6.2"
   },
   "scripts": {
     "all": "run-z build,lint,test",
