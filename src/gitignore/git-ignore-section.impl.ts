@@ -4,7 +4,6 @@ import { GitIgnoreFileCtl } from './git-ignore-file.impl.js';
 import { GitIgnoreSection } from './git-ignore-section.js';
 
 class GitIgnoreSection$ extends GitIgnoreSection {
-
   readonly #ctl: GitIgnoreSectionCtl;
 
   constructor(ctl: GitIgnoreSectionCtl, title: string) {
@@ -25,14 +24,12 @@ class GitIgnoreSection$ extends GitIgnoreSection {
 
     return this;
   }
-
 }
 
 /**
  * @internal
  */
 export class GitIgnoreSectionCtl {
-
   readonly #entries = new Map<string, [GitIgnoreEntry, GitIgnoreEntryCtl]>();
   readonly #fileCtl: GitIgnoreFileCtl;
   readonly #section: GitIgnoreSection$;
@@ -120,5 +117,4 @@ export class GitIgnoreSectionCtl {
       this.#detached = undefined;
     }
   }
-
 }

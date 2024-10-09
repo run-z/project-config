@@ -12,7 +12,6 @@ import { GitIgnoreSection } from './git-ignore-section.js';
  * call the {@link GitIgnoreEntry.ignore} method.
  */
 export abstract class GitIgnoreEntry {
-
   readonly #pattern: string;
 
   /**
@@ -156,7 +155,6 @@ export abstract class GitIgnoreEntry {
 
     return out;
   }
-
 }
 
 export namespace GitIgnoreEntry {

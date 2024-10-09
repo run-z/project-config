@@ -3,7 +3,6 @@ import { GitIgnoreSectionCtl } from './git-ignore-section.impl.js';
 import { GitIgnoreSection } from './git-ignore-section.js';
 
 class GitIgnoreEntry$ extends GitIgnoreEntry {
-
   readonly #sectionCtl: GitIgnoreSectionCtl;
   #ctl: GitIgnoreEntryCtl;
 
@@ -60,7 +59,6 @@ class GitIgnoreEntry$ extends GitIgnoreEntry {
   get #currentCtl(): GitIgnoreEntryCtl | undefined {
     return this.#sectionCtl.fileCtl.entryCtl(this.pattern);
   }
-
 }
 
 /**
@@ -105,7 +103,6 @@ export function gitIgnorePattern(rawPattern: string): {
  * @internal
  */
 export class GitIgnoreEntryCtl {
-
   static parse(line: string): GitIgnoreEntryCtl | undefined {
     if (line.startsWith('\\#')) {
       // Pattern starting with `#` has to be escaped.
@@ -226,5 +223,4 @@ export class GitIgnoreEntryCtl {
   detach(): void {
     this.#detached = true;
   }
-
 }

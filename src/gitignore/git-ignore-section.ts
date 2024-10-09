@@ -11,7 +11,6 @@ import { GitIgnoreFile } from './git-ignore-file.js';
  * The section consists of rules following the title comment.
  */
 export abstract class GitIgnoreSection {
-
   readonly #file: GitIgnoreFile;
   readonly #title: string;
 
@@ -104,5 +103,4 @@ export abstract class GitIgnoreSection {
 
     return out;
   }
-
 }

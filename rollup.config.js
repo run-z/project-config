@@ -21,11 +21,11 @@ export default defineConfig({
   ],
   external(id) {
     return (
-      id.startsWith('node:')
-      || externalModules.has(id)
-      || id.startsWith('rollup')
-      || id.startsWith('@run-z/')
-      || id.startsWith('@rollup/')
+      id.startsWith('node:') ||
+      externalModules.has(id) ||
+      id.startsWith('rollup') ||
+      id.startsWith('@run-z/') ||
+      id.startsWith('@rollup/')
     );
   },
   output: {

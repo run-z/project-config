@@ -25,7 +25,6 @@ function ProjectJestConfig$create(this: void, project: ProjectConfig): ProjectJe
  * Configuration of project tests utilizing Jest.
  */
 export class ProjectJestConfig extends ProjectDevTool {
-
   /**
    * Gains Jest configuration of the project.
    *
@@ -364,5 +363,4 @@ export class ProjectJestConfig extends ProjectDevTool {
 
     await jest.run(args);
   }
-
 }

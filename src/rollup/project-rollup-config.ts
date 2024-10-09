@@ -38,7 +38,6 @@ function ProjectRollupConfig$create(project: ProjectConfig): ProjectRollupConfig
  * Rollup configuration of the project.
  */
 export class ProjectRollupConfig extends ProjectDevTool {
-
   /**
    * Gains Rollup configuration of the project.
    *
@@ -172,7 +171,8 @@ export class ProjectRollupConfig extends ProjectDevTool {
       const clone = this.clone();
       const prevOptions = this.#customOptions;
 
-      clone.#customOptions = async () => await RollupOptions$extendAll(await prevOptions(), extensions);
+      clone.#customOptions = async () =>
+        await RollupOptions$extendAll(await prevOptions(), extensions);
 
       return clone;
     }
@@ -474,7 +474,6 @@ export class ProjectRollupConfig extends ProjectDevTool {
       },
     ];
   }
-
 }
 
 function RollupOptions$asArray(

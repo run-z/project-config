@@ -9,7 +9,6 @@ import { type ProjectPackage } from './project-package.js';
  * [entry point]: https://nodejs.org/dist/latest-v18.x/docs/api/packages.html#package-entry-points
  */
 export class ProjectExport extends ProjectEntry {
-
   #entryPoint: PackageEntryPoint;
 
   /**
@@ -147,11 +146,10 @@ export class ProjectExport extends ProjectEntry {
    */
   findConditional(...conditions: string[]): `./${string}` | undefined {
     return (
-      this.entryPoint.findConditional(...conditions)
-      || this.entryPoint.findConditional(
+      this.entryPoint.findConditional(...conditions) ||
+      this.entryPoint.findConditional(
         ...conditions.filter(condition => condition !== 'import' && condition !== 'default'),
       )
     );
   }
-
 }

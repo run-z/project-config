@@ -11,7 +11,6 @@ import { ProjectDevHostType, type ProjectDevHost } from './project-dev-host.js';
  * @typeParam THost - Type of development tool host.
  */
 export abstract class ProjectDevTool<THost extends ProjectDevHost = ProjectConfig> {
-
   readonly #project: ProjectConfig;
   readonly #hostType: ProjectDevHostType<THost>;
 
@@ -47,5 +46,4 @@ export abstract class ProjectDevTool<THost extends ProjectDevHost = ProjectConfi
   protected clone(): this {
     return new (this.constructor as new (host: THost) => this)(this.host());
   }
-
 }

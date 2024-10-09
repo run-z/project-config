@@ -5,7 +5,6 @@ import { GitIgnoreFile } from './git-ignore-file.js';
  * @internal
  */
 export class GitIgnoreFileCtl {
-
   readonly #file: GitIgnoreFile;
   readonly #entryCtls = new Map<string, GitIgnoreEntryCtl>();
   #isModified = false;
@@ -55,5 +54,4 @@ export class GitIgnoreFileCtl {
 
     return this;
   }
-
 }

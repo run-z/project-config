@@ -26,7 +26,6 @@ function ProjectPackage$create(project: ProjectConfig): ProjectPackage {
  * Package configuration constructed by `package.json` contents.
  */
 export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
-
   /**
    * Gains package configuration of the project.
    *
@@ -300,5 +299,4 @@ export class ProjectPackage extends ProjectDevTool implements ProjectDevHost {
 
     return clone;
   }
-
 }

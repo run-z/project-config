@@ -12,7 +12,6 @@ import { type ProjectPackage } from './project-package.js';
  * @typeParam TEntry - Entry type.
  */
 export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
-
   readonly #path: string;
   #name?: Promise<string | null>;
   #distFiles?: Promise<ProjectEntry.DistFiles | null>;
@@ -272,7 +271,6 @@ export abstract class ProjectEntry extends ProjectDevTool<ProjectPackage> {
   async toGenerated(): Promise<(this & ProjectEntry.Generated) | undefined> {
     return (await this.isGenerated) ? (this as this & ProjectEntry.Generated) : undefined;
   }
-
 }
 
 export namespace ProjectEntry {

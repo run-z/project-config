@@ -11,7 +11,6 @@ import { ProjectToolDefaults, ProjectToolsInit } from './project-tools.js';
  * Project configuration.
  */
 export class ProjectConfig implements ProjectInit, ProjectDevHost {
-
   /**
    * Loads project configuration from specified module.
    *
@@ -161,7 +160,6 @@ export class ProjectConfig implements ProjectInit, ProjectDevHost {
   async loadConfig<TConfig>(url: string, defaultConfig?: TConfig): Promise<TConfig> {
     return await loadConfig(this.rootDir, url, defaultConfig);
   }
-
 }
 
 /**
@@ -208,9 +206,9 @@ async function loadConfig<TConfig>(
     return configModule.default;
   } catch (error) {
     if (
-      defaultConfig !== undefined
-      && error instanceof Error
-      && (error as unknown as { code: string }).code === 'ERR_MODULE_NOT_FOUND'
+      defaultConfig !== undefined &&
+      error instanceof Error &&
+      (error as unknown as { code: string }).code === 'ERR_MODULE_NOT_FOUND'
     ) {
       // No configuration module found.
       return defaultConfig;

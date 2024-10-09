@@ -5,7 +5,6 @@ import { ProjectToolDefaults, ProjectToolsInit } from './project-tools.js';
  * @internal
  */
 export class ProjectTools$Proxy implements ProxyHandler<ProjectToolDefaults> {
-
   readonly #project: ProjectConfig;
   readonly #init: ProjectToolsInit;
   readonly #tools = new Map<string | symbol, unknown>();
@@ -67,5 +66,4 @@ export class ProjectTools$Proxy implements ProxyHandler<ProjectToolDefaults> {
       configurable: true,
     };
   }
-
 }

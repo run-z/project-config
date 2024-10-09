@@ -25,7 +25,6 @@ function ProjectTypescriptConfig$create(project: ProjectConfig): ProjectTypescri
  * TypeScript configuration of the project.
  */
 export class ProjectTypescriptConfig extends ProjectDevTool {
-
   /**
    * Gains specified TypeScript configuration of the project.
    *
@@ -139,8 +138,8 @@ export class ProjectTypescriptConfig extends ProjectDevTool {
 
     if (errors.length) {
       throw new ProjectError(
-        `Can not write TypeScript configuration (${file}):\n`
-          + ts.formatDiagnosticsWithColorAndContext(errors, this.#errorFormatHost(ts)),
+        `Can not write TypeScript configuration (${file}):\n` +
+          ts.formatDiagnosticsWithColorAndContext(errors, this.#errorFormatHost(ts)),
       );
     }
 
@@ -255,7 +254,6 @@ export class ProjectTypescriptConfig extends ProjectDevTool {
 
     return clone;
   }
-
 }
 
 /**

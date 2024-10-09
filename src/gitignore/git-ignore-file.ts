@@ -12,7 +12,6 @@ import { GitIgnoreSection } from './git-ignore-section.js';
  * The file consists of {@link GitIgnoreSection sections} separated by comments.
  */
 export class GitIgnoreFile {
-
   readonly #ctl: GitIgnoreFileCtl;
   readonly #sectionCtls = new Map<string, GitIgnoreSectionCtl>();
 
@@ -209,5 +208,4 @@ export class GitIgnoreFile {
 
     return out;
   }
-
 }

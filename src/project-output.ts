@@ -8,7 +8,6 @@ import { ProjectConfig } from './project-config.js';
  * Project output configuration.
  */
 export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputInit> {
-
   /**
    * Creates project output configuration.
    *
@@ -381,7 +380,6 @@ export class ProjectOutput implements ProjectOutputInit, Required<ProjectOutputI
     this.#dirs = [this.#distDir, this.#targetDir, this.#cacheDir];
     this.#isSaved = false;
   }
-
 }
 
 /**
